@@ -16,6 +16,11 @@ Fixes found while dogfooding the viewer in a real WSL desktop.
 - **Viewer ownership label was inverted** (`本插件启动` / `复用已有桌面`).
 - `desktop_up` is noticeably faster when the VNC wait succeeds first try.
 - Docs: real screenshots of the shell badge (`docs/screenshots/`).
+- Tests: **L5 real composition** — `cordis.patch.yml` is parsed with the DSH
+  launcher's own `entryListSchema` and composed with its `applyEntryPatches`
+  (against both the repo and the installed artifact), and **L6 client contract**
+  — `lib/client.js` is loaded under `window.__ModuleLoader__.load` and must
+  register the settings card without throwing on hosts that have no slots.
 
 ## 0.1.0 — 2026-10-20
 
