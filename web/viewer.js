@@ -40,7 +40,7 @@
 
     el.conn.dataset.live = desktop.ready ? '1' : '0';
     el.meta.textContent = desktop.ready
-      ? `${desktop.resolution || ''} · ${desktop.display || ''} · ${desktop.owned ? '复用已有桌面' : '本插件启动'}`
+      ? `${desktop.resolution || ''} · ${desktop.display || ''} · ${desktop.owned ? '本插件启动' : '复用已有桌面'}`
       : '未启动';
 
     if (state.since) {

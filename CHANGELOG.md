@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.1 — 2026-10-20
+
+Fixes found while dogfooding the viewer in a real WSL desktop.
+
+- **x11vnc refused to start under WSL.** The shell exports `XDG_SESSION_TYPE=wayland`
+  / `WAYLAND_DISPLAY`, which x11vnc trusts over `-display` and exits with
+  "Wayland display server detected" — Xvfb and websockify stayed healthy, so the
+  sidebar showed an empty noVNC frame ("Failed to connect to server").
+  `desktop-up.sh` now scrubs those variables for every child it starts, and a
+  new e2e step poisons the environment on purpose to keep it fixed.
+- **"Ready" no longer lies.** `desktop_up`/`probe` require a listening VNC port
+  in addition to X + websockify, and fail with `vnc_failed` plus a log path
+  instead of reporting a usable desktop with no picture.
+- **Viewer ownership label was inverted** (`本插件启动` / `复用已有桌面`).
+- `desktop_up` is noticeably faster when the VNC wait succeeds first try.
+- Docs: real screenshots of the shell badge (`docs/screenshots/`).
+
 ## 0.1.0 — 2026-10-20
 
 First release.

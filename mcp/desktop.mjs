@@ -81,7 +81,11 @@ export class Desktop {
 
   info(info) {
     const urls = this.urls(info);
-    const ready = info.READY === '1' || (info.DISPLAY_ALIVE === '1' && info.WEB_ALIVE === '1');
+    // A desktop without a VNC server renders an empty sidebar ("Failed to
+    // connect"), so VNC is part of "ready", not just X + websockify.
+    const ready =
+      info.READY === '1' ||
+      (info.DISPLAY_ALIVE === '1' && info.WEB_ALIVE === '1' && info.VNC_ALIVE === '1');
     return {
       display: this.display,
       resolution: info.RESOLUTION || this.settings.resolution,

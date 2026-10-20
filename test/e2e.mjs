@@ -8,6 +8,10 @@
 import assert from 'node:assert/strict';
 import { createClient } from './helpers/mcp-client.mjs';
 
+// Poison the Wayland hint on purpose: WSL shells export it, and x11vnc must
+// still start on the X display we point it at (see step below).
+process.env.XDG_SESSION_TYPE = 'wayland';
+process.env.WAYLAND_DISPLAY = 'wayland-0';
 const SETTINGS = {
   display: ':98',
   vncPort: 5902,
@@ -117,6 +121,17 @@ try {
     const scope = await listenScope(firstUp.webPort);
     assert.equal(scope, 'loopback', `websockify is listening on "${scope}"`);
     return `port ${firstUp.webPort} = ${scope}`;
+  });
+
+  // Regression: WSL remote shells often export Wayland hints. x11vnc trusts
+  // them over -display and exits, which leaves the sidebar on
+  // "Failed to connect" while Xvfb and websockify still look healthy.
+  await step('x11vnc starts despite a Wayland session hint', async () => {
+    const processes = await exec("pgrep -af 'x11vnc' | grep -c ':98'");
+    assert.ok(Number(processes.out.trim()) >= 1, 'x11vnc for :98 is not running');
+    const page = await exec(`curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:${firstUp.webPort}/vnc.html`);
+    assert.equal(page.out.trim(), '200', 'websockify does not serve the noVNC client');
+    return `x11vnc alive, noVNC client served on ${firstUp.webPort}`;
   });
 
   await step('viewer is reachable and never shares a port with websockify', async () => {

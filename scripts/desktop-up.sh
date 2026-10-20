@@ -15,6 +15,12 @@ WEB_REQ="${WSLCU_WEB_PORT:-6080}"
 BIND="${WSLCU_BIND:-127.0.0.1}"
 LOG="$WSLCU_STATE_DIR"
 
+# WSL / remote shells often export Wayland hints. x11vnc trusts those over
+# -display and exits with "Wayland display server detected", leaving websockify
+# with nothing to bridge and the sidebar stuck on "Failed to connect". Scrub
+# them for every child this script starts.
+unset WAYLAND_DISPLAY XDG_SESSION_TYPE XDG_SESSION_ID
+
 # --- 1. X server -----------------------------------------------------------
 if display_alive "$D"; then
   XVFB_OWNED=0
@@ -63,7 +69,11 @@ else
   VNC_PID=$!
   VNC_OWNED=1
   write_pid "$VNC_PID" "x11vnc-${NUM_DISPLAY}"
-  wait_until "port_busy $VNC_PORT" 50 || true
+  if ! wait_until "port_busy $VNC_PORT" 50; then
+    echo "ERROR=vnc_failed"
+    echo "LOG=$LOG/x11vnc-${NUM_DISPLAY}.log"
+    exit 4
+  fi
 fi
 
 # --- 4. noVNC bridge -------------------------------------------------------
@@ -97,7 +107,7 @@ echo "WEB_OWNED=${WEB_OWNED}"
 echo "WEB_PID=${WEB_PID}"
 echo "BIND=${BIND}"
 echo "VNC_PASSWORD=${PW}"
-if [ -n "$WEB_PORT" ] && port_busy "$WEB_PORT" && display_alive "$D"; then
+if [ -n "$WEB_PORT" ] && port_busy "$WEB_PORT" && port_busy "$VNC_PORT" && display_alive "$D"; then
   echo "READY=1"
 else
   echo "READY=0"

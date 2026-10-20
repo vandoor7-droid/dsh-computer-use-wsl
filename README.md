@@ -39,7 +39,7 @@ DSH (Windows 或 WSL 内)
 
 ```bash
 # 在 DSH 所在的机器上
-dsh plugin add ./dsh-computer-use-wsl-0.1.0.tgz
+dsh plugin add ./dsh-computer-use-wsl-0.1.1.tgz
 ```
 
 重启 DSH 后，模型侧出现 16 个 `mcp__wslcu__*` 工具。回滚：
@@ -66,7 +66,15 @@ desktop_down                # 只停自己起的进程
 
 ## 侧边栏视图与「DSH 操作中」
 
-外壳页由 MCP server 自己托管（不依赖宿主路由 API），因此任何能打开 `http://127.0.0.1:6081/` 的地方都能用：
+外壳页由 MCP server 自己托管（不依赖宿主路由 API），因此任何能打开 `http://127.0.0.1:6081/` 的地方都能用。
+
+模型正在操作时，右上角是蓝色的「**DSH 操作中 · click**」（带当前工具名）：
+
+![DSH 操作中](./docs/screenshots/viewer-agent.png)
+
+没有动作时是灰色的「空闲」，点「我要接管」变橙色「你正在操作」：
+
+![空闲](./docs/screenshots/viewer-idle.png)
 
 | 状态 | 触发 | 胶囊文案 | 模型输入 |
 |---|---|---|---|
