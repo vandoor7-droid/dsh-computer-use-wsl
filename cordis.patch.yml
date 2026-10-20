@@ -1,0 +1,13 @@
+# dsh-computer-use-wsl — DSH bundle patch layer
+#
+# Mounts the WSL/Linux computer-use MCP server through the in-box
+# @deepseek-ai/dsh-mcp-client bridge. After DSH starts, the model sees tools
+# named mcp__wslcu__<tool> (health, snapshot, click, type_text, key, ...).
+#
+# The adapter resolves mcp/server.mjs relative to itself and delegates to the
+# official bridge; no hard-coded profile paths.
+- insert:
+    - id: mcp-dsh-computer-use-wsl
+      name: 'dsh-computer-use-wsl'
+      config:
+        mode: full

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="wslcu-token" content="__WSLCU_TOKEN__" />
+    <title>WSL 虚拟桌面</title>
+    <link rel="stylesheet" href="/viewer.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <div class="left">
+        <span class="dot" id="conn" title="noVNC 连接状态"></span>
+        <strong>WSL 虚拟桌面</strong>
+        <span class="meta" id="meta">加载中…</span>
+      </div>
+      <div class="right">
+        <span class="pill" id="pill" data-state="idle">
+          <span class="pill-dot"></span>
+          <span class="pill-text" id="pillText">空闲</span>
+          <span class="pill-tool" id="pillTool"></span>
+        </span>
+        <button class="btn" id="takeover" type="button">我要接管</button>
+        <a class="link" id="rawLink" href="#" target="_blank" rel="noreferrer">原始 noVNC</a>
+      </div>
+    </header>
+
+    <main class="stage">
+      <iframe id="screen" title="虚拟桌面画面" allow="clipboard-read; clipboard-write"></iframe>
+      <div class="empty" id="empty">
+        <p>虚拟桌面尚未启动。</p>
+        <p class="hint">让 DSH 调用 <code>desktop_up</code>，或在本页等待自动重载。</p>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <span id="hint">接管后 DSH 将无法移动鼠标或输入按键；随时点「交还给 DSH」恢复。</span>
+      <span id="since"></span>
+    </footer>
+
+    <script src="/viewer.js"></script>
+  </body>
+</html>
