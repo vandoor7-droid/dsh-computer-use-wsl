@@ -1,0 +1,81 @@
+{
+    "name":  "dsh-computer-use-wsl",
+    "version":  "0.1.0",
+    "description":  "WSL / headless-Linux computer use for DeepSeek Harness: an MCP stdio bridge drives an Xvfb + x11vnc + noVNC desktop, exposing snapshot/click/type/key tools, plus a sidebar viewer shell that shows 「DSH 操作中」 and lets the human take over at any time.",
+    "type":  "module",
+    "main":  "./lib/index.js",
+    "exports":  {
+                    ".":  "./lib/index.js",
+                    "./client":  "./lib/client.js",
+                    "./package.json":  "./package.json"
+                },
+    "files":  [
+                  "lib/",
+                  "mcp/",
+                  "web/",
+                  "scripts/",
+                  "cordis.patch.yml",
+                  "README.md",
+                  "README.en.md",
+                  "CHANGELOG.md",
+                  "THIRD_PARTY.md",
+                  "LICENSE"
+              ],
+    "dsh":  {
+                "bundle":  {
+                               "patch":  "./cordis.patch.yml"
+                           },
+                "client":  {
+                               "platform":  "web",
+                               "inject":  [
+                                              "@deepseek-ai/dsh-client-locale"
+                                          ]
+                           }
+            },
+    "engines":  {
+                    "node":  "\u003e=20"
+                },
+    "os":  [
+               "win32",
+               "linux"
+           ],
+    "scripts":  {
+                    "self-test":  "node mcp/server.mjs --self-test",
+                    "test":  "node --test test/unit.test.mjs",
+                    "l1":  "node test/mcp-handshake.mjs",
+                    "l2":  "node test/e2e.mjs",
+                    "l2b":  "node test/viewer-state.mjs",
+                    "l4":  "node test/transport-stub.mjs",
+                    "verify":  "bash scripts/verify.sh",
+                    "prepack":  "node scripts/pack-check.mjs"
+                },
+    "keywords":  [
+                     "deepseek-harness",
+                     "dsh",
+                     "dsh-plugin",
+                     "mcp",
+                     "computer-use",
+                     "wsl",
+                     "xvfb",
+                     "novnc",
+                     "xdotool",
+                     "desktop-automation"
+                 ],
+    "repository":  {
+                       "type":  "git",
+                       "url":  "git+https://github.com/vandoor7-droid/dsh-computer-use-wsl.git"
+                   },
+    "peerDependencies":  {
+                             "@deepseek-ai/dsh-mcp-client":  "\u003e=0.1.0-rc.2 || \u003e=0.2.0-rc.2",
+                             "@deepseek-ai/schemastery":  "\u003e=3.18.1"
+                         },
+    "peerDependenciesMeta":  {
+                                 "@deepseek-ai/dsh-mcp-client":  {
+                                                                     "optional":  true
+                                                                 },
+                                 "@deepseek-ai/schemastery":  {
+                                                                  "optional":  true
+                                                              }
+                             },
+    "license":  "MIT"
+}

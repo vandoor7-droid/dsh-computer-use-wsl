@@ -1,0 +1,70 @@
+#!/usr/bin/env node
+/**
+ * Pre-publish gate: fail the pack if the repository leaks something that must
+ * not become public, or if a required file is missing.
+ *
+ * Run via `npm run prepack` (also runs when you `npm pack`).
+ */
+
+import { readdir, readFile, stat } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
+const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'reference', 'artifacts']);
+const TEXT_EXT = new Set(['.md', '.js', '.mjs', '.json', '.yml', '.yaml', '.sh', '.css', '.html', '.txt']);
+const FORBIDDEN = [
+  { pattern: /gh[pousr]_[A-Za-z0-9]{16,}/, why: 'GitHub token' },
+  { pattern: /sk-[A-Za-z0-9]{20,}/, why: 'API key' },
+  { pattern: /宋晔桐/, why: 'account holder name' },
+  { pattern: /D:\\文档\\/, why: 'absolute Windows path from the author machine' },
+  { pattern: /\/mnt\/d\/文档\//, why: 'absolute WSL path from the author machine' },
+  { pattern: /password\s*[:=]\s*['"][^'"]{6,}['"]/, why: 'hard-coded password' },
+];
+
+async function walk(dir, out = []) {
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      if (SKIP_DIRS.has(entry.name)) continue;
+      await walk(path.join(dir, entry.name), out);
+    } else if (entry.isFile()) {
+      out.push(path.join(dir, entry.name));
+    }
+  }
+  return out;
+}
+
+const problems = [];
+for (const file of await walk(ROOT)) {
+  const rel = path.relative(ROOT, file).replace(/\\/g, '/');
+  if (!TEXT_EXT.has(path.extname(file))) continue;
+  // The scanner names the patterns it looks for; do not scan itself.
+  if (rel === 'scripts/pack-check.mjs') continue;
+  const content = await readFile(file, 'utf8');
+  for (const { pattern, why } of FORBIDDEN) {
+    if (pattern.test(content)) problems.push(`${rel}: contains ${why}`);
+  }
+}
+
+for (const required of [
+  'package.json',
+  'cordis.patch.yml',
+  'lib/index.js',
+  'mcp/server.mjs',
+  'web/viewer.html',
+  'README.md',
+  'LICENSE',
+]) {
+  try {
+    await stat(path.join(ROOT, required));
+  } catch {
+    problems.push(`missing required file: ${required}`);
+  }
+}
+
+if (problems.length) {
+  console.error('pack-check failed:');
+  for (const problem of problems) console.error(`  - ${problem}`);
+  process.exit(1);
+}
+console.log('pack-check ok');

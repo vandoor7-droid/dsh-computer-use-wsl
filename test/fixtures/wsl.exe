@@ -1,0 +1,19 @@
+#!/bin/sh
+# Minimal wsl.exe stand-in used by L4.
+#
+# It accepts the option shapes the plugin emits and runs the trailing command
+# locally, so the Windows-side ("transport: wsl") code path can be exercised on
+# a plain Linux box without a distribution.
+if [ "$1" = "-l" ] || [ "$1" = "--list" ]; then
+  echo "StubDistro"
+  exit 0
+fi
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -d|--distribution|-u|--user) shift 2 ;;
+    --) shift; break ;;
+    -*) shift ;;
+    *) break ;;
+  esac
+done
+exec "$@"
