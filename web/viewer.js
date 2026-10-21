@@ -12,19 +12,31 @@
     conn: document.getElementById('conn'),
     raw: document.getElementById('rawLink'),
     since: document.getElementById('since'),
+    reload: document.getElementById('reload'),
   };
 
   const LABEL = { idle: '空闲', agent: 'DSH 操作中', user: '你正在操作' };
   let lastFrameSrc = '';
   let lastKey = '';
+  let lastUrl = '';
 
   function setFrame(url) {
     if (!url || url === lastFrameSrc) return;
     lastFrameSrc = url;
+    lastUrl = url;
     el.frame.src = url;
     el.raw.href = url;
     el.empty.hidden = true;
   }
+
+  // noVNC can give up while the backend restarts; one click re-establishes it.
+  el.reload?.addEventListener('click', () => {
+    if (!lastUrl) return;
+    el.frame.src = 'about:blank';
+    setTimeout(() => {
+      el.frame.src = lastUrl;
+    }, 150);
+  });
 
   function render(state) {
     const s = state.state || 'idle';

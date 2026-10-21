@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.2 — 2026-10-21
+
+- **Daemons now survive the launching session.** `nohup` alone was not enough:
+  x11vnc installs its own `SIGHUP` handler and exited when the WSL shell that
+  started it went away, leaving websockify with nothing to bridge and the
+  sidebar stuck on "Failed to connect". `desktop-up.sh` starts Xvfb, openbox,
+  x11vnc and websockify with `setsid nohup`, so they survive a closed session
+  (verified across a 10-hour gap).
+- Viewer: a 「重连画面」 button reloads the embedded noVNC without losing the
+  state badge or the takeover control.
+
 ## 0.1.1 — 2026-10-20
 
 Fixes found while dogfooding the viewer in a real WSL desktop.

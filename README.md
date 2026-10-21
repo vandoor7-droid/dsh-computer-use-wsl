@@ -39,7 +39,7 @@ DSH (Windows 或 WSL 内)
 
 ```bash
 # 在 DSH 所在的机器上
-dsh plugin add ./dsh-computer-use-wsl-0.1.1.tgz
+dsh plugin add ./dsh-computer-use-wsl-0.1.2.tgz
 ```
 
 重启 DSH 后，模型侧出现 16 个 `mcp__wslcu__*` 工具。回滚：
