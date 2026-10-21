@@ -22,6 +22,12 @@ DSH (Windows 或 WSL 内)
 
 ## 为什么需要它
 
+> 生态里已有的 Computer Use 插件（如 [dsh-computer-use-win](https://github.com/Yu-tao-Li/dsh-computer-use-win)、
+> [gxpppp/dsh-computer-use](https://dsh-plugin.org/plugins/gxpppp/dsh-computer-use)、
+> [anionex/dsh-computer-use](https://github.com/anionex/dsh-computer-use)）都是**直接驱动宿主真实桌面**。
+> 需要"隔离桌面 + 侧边栏可见 + 人来接管"时没有现成方案，这就是本插件的定位。
+> 完整对比见 [docs/investigation.zh.md](docs/investigation.zh.md)。
+
 生态里已有的 WSL 插件都只解决「**执行**」或「**运行位置**」：
 
 | 插件 | 能做什么 | 与本插件的关系 |
