@@ -17,6 +17,7 @@ import { createCapture } from './capture.mjs';
 import { createInput } from './input.mjs';
 import { ControlState, ControlError } from './takeover.mjs';
 import { ControlFile } from './control-store.mjs';
+import { textMatches, hasCondition } from './text-match.mjs';
 import { startViewerServer } from './viewer-server.mjs';
 import { sh } from './transport.mjs';
 
@@ -491,6 +492,38 @@ const tools = [
       control.touch('read_all_text');
       if (args.target) await activateWindow(args.target);
       return input.readAllText(args);
+    },
+  },
+  {
+    name: 'wait_text',
+    description: 'Wait until the focused document satisfies a text condition (contains / absent / regex), polling read_all_text. Use it instead of guessing sleeps: e.g. wait for 「部署成功」 to appear, or for a spinner label to disappear. Mutating: it copies.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        contains: { type: 'string', description: 'text that must be present' },
+        absent: { type: 'string', description: 'text that must be gone' },
+        regex: { type: 'string', description: 'regular expression that must match' },
+        timeoutMs: { type: 'number', description: 'give up after this long (default 15000)' },
+        intervalMs: { type: 'number', description: 'poll interval (default 500)' },
+        maxChars: { type: 'number', description: 'cap the captured text (default 200000)' },
+      },
+      additionalProperties: false,
+    },
+    handler: async (args) => {
+      if (!hasCondition(args)) throw new ControlError('BAD_ARGUMENT', 'wait_text needs at least one of contains / absent / regex');
+      control.assertAgentMayAct('wait_text');
+      control.touch('wait_text');
+      const timeout = Math.max(300, Number(args.timeoutMs) || 15000);
+      const interval = Math.max(150, Math.min(5000, Number(args.intervalMs) || 500));
+      const started = Date.now();
+      let last = { text: '', bytes: 0, truncated: false };
+      for (;;) {
+        last = await input.readAllText({ maxChars: args.maxChars });
+        const waitedMs = Date.now() - started;
+        if (textMatches(last.text, args)) return { matched: true, waitedMs, ...last };
+        if (waitedMs >= timeout) return { matched: false, waitedMs, ...last };
+        await new Promise((resolve) => setTimeout(resolve, interval));
+      }
     },
   },
   {
