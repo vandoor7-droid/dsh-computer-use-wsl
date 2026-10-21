@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.5 — 2026-10-21
+
+- Declare `dsh.compatibility.dshReleases: ["0.2.1-rc.2"]`, the release this
+  package was actually composed and tested against (L5 runs the shipped
+  `cordis.patch.yml` through the real `applyEntryPatches` + `entryListSchema`,
+  L6 loads the client module through `__ModuleLoader__`).
+- `package.json` is normalized (stable formatting, still BOM-free — a BOM broke
+  `dsh plugin add` earlier).
 ## 0.1.4 — 2026-10-21
 
 - **The badge now matches reality across instances.** `ControlState.get()` merged
