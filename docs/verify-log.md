@@ -95,3 +95,31 @@ dsh plugin --profile lab add /opt/wslcu-dist/dsh-computer-use-wsl-0.1.7.tgz
     #   name: dsh-computer-use-wsl
 
 `dsh.compatibility.dshReleases` 因此更新为 `["0.2.0-rc.2", "0.2.1-rc.2"]`。
+## 2026-10-21 · v0.1.10（集成演练 + 打包门禁）
+
+### 长链路集成演练（本地表单页，不碰华为云会话）
+
+页面 `file:///tmp/form-test.html`：固定坐标的输入框 + 提交按钮 + 800ms 后出结果。
+
+    点击输入框 (230,111)        → state=agent
+    type_text "上海旅游"        → method=clipboard (CJK 走剪贴板)
+    点击提交 (120,170)          → state=agent
+    wait_text "已提交：上海旅游" → matched:true, waitedMs=677
+    read_all_text               → 表单测试就绪 / 上海旅游 / 提交已提交：上海旅游
+
+**演练暴露的三个陷阱**（已写入 README「已知边界」）：
+
+| 陷阱 | 现象 | 规避 |
+|---|---|---|
+| 页面坐标 ≠ 屏幕坐标 | 窗口化时点 `(120,172)` 落在地址栏附近，按钮没反应 | 全屏（F11）后两者一致 |
+| Chrome「恢复上次会话」气泡 | 盖住左上角 0–305 × 30–287，**吞掉所有点击**，Escape 关不掉 | 点它的 X (278,70) |
+| `read_all_text` 的读取范围 | 光标在输入框里时，`ctrl+a/ctrl+c` 取到的是**输入框内容**，`wait_text` 会一直看不到页面文本 | 先点空白处再读页面 |
+
+### 打包门禁加固
+
+`npm pack` 曾把一个**语法错误**打进包（工具描述里 `input's` 的撇号截断了单引号字符串），
+结果 8 层里 5 层同时失败。`scripts/pack-check.mjs` 现在对 `mcp/` 与 `lib/` 下每个模块跑
+`node --check`：
+
+    正向：干净仓库        → pack-check ok
+    负向：故意写坏语法    → pack-check failed: - syntax error in mcp/text-match.mjs:50

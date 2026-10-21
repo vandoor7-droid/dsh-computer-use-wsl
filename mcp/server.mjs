@@ -478,7 +478,7 @@ const tools = [
   },
   {
     name: 'read_all_text',
-    description: 'Read the focused document as text (select-all + copy, then read the clipboard; the previous clipboard is restored). Vision-free and greppable — usually cheaper and more reliable than a screenshot for understanding a page. Mutating: it changes the selection.',
+    description: 'Read the focused document as text (select-all + copy, then read the clipboard; the previous clipboard is restored). Vision-free and greppable — usually cheaper and more reliable than a screenshot for understanding a page. If focus sits inside a text input, the copy returns the value of that field instead of the page text: click a blank area first when you need the page. Mutating: it changes the selection.',
     inputSchema: {
       type: 'object',
       properties: {

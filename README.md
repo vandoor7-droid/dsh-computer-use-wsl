@@ -45,7 +45,7 @@ DSH (Windows 或 WSL 内)
 
 ```bash
 # 在 DSH 所在的机器上
-dsh plugin add ./dsh-computer-use-wsl-0.1.9.tgz
+dsh plugin add ./dsh-computer-use-wsl-0.1.10.tgz
 ```
 
 重启 DSH 后，模型侧出现 17 个 `mcp__wslcu__*` 工具。回滚：
@@ -149,6 +149,10 @@ L2/L2b/L4 需要 Linux X 栈（Xvfb、xdotool、imagemagick、xclip），在发�
 L5 需要本机装有 DSH（找不到时自动 SKIP，不报错）。
 
 ## 已知边界
+
+- **ead_all_text / wait_text 的读取范围**：它们靠 ctrl+a / ctrl+c 取文本。若光标停在输入框里，取到的是**该输入框的内容**而不是整页；需要读页面时先点一下空白处。
+- **屏幕坐标 vs 页面坐标**：窗口化时两者差一个浏览器 chrome 的高度（约 90px）；全屏（F11）后一致，建议自动化时全屏。
+- **Chrome「恢复上次会话」气泡**会盖住左上角并吞掉点击，且 Escape 关不掉，要点它的 X。
 
 - 首次使用需要 `bootstrap`（或手工装 X 组件），`desktop_up` 不会偷偷装包。
 - 没有窗口管理器也能工作（点击/输入仍然可用），但部分应用在无 WM 下行为怪异；`desktop_up` 有 openbox 就会起。
