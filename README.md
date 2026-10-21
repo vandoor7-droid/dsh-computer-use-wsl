@@ -129,6 +129,8 @@ desktop_down                # 只停自己起的进程
 
 ## 测试
 
+> 发布产物装进官方 DSH 之后的组合验收记录（版本、SHA-256、--dump-config 片段）：[docs/verify-log.md](docs/verify-log.md)。
+
 ```bash
 npm test                      # L0 纯逻辑
 node mcp/server.mjs --self-test
