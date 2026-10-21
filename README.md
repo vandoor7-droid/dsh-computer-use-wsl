@@ -88,7 +88,8 @@ desktop_down                # 只停自己起的进程
 
 | 工具 | 作用 |
 |---|---|
-| `health` | 只读：transport、显示器、端口、就绪状态、viewerUrl |
+| `health` | 只读：transport、显示器、端口、就绪状态、viewerUrl、当前控制状态 |
+| `control_state` | 只读：**谁在操作**（跨实例共享，接管后所有实例都看得到） |
 | `desktop_up` / `desktop_down` | Xvfb + WM + x11vnc + websockify 生命周期（幂等、带归属追踪） |
 | `bootstrap` | 显式安装 X 组件栈 |
 | `launch` | 后台启动 GUI 应用并确认存活（WSL 会回收裸 `&`） |
