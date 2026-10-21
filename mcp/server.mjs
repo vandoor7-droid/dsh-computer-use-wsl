@@ -476,6 +476,24 @@ const tools = [
     },
   },
   {
+    name: 'read_all_text',
+    description: 'Read the focused document as text (select-all + copy, then read the clipboard; the previous clipboard is restored). Vision-free and greppable — usually cheaper and more reliable than a screenshot for understanding a page. Mutating: it changes the selection.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        maxChars: { type: 'number', description: 'cap the returned text (default 200000)' },
+        target: { type: 'number', description: 'optional window id to activate first' },
+      },
+      additionalProperties: false,
+    },
+    handler: async (args) => {
+      control.assertAgentMayAct('read_all_text');
+      control.touch('read_all_text');
+      if (args.target) await activateWindow(args.target);
+      return input.readAllText(args);
+    },
+  },
+  {
     name: 'takeover',
     description: 'Human takeover switch: start = the human drives (all mutating tools are refused), stop = hand back to the agent, status = read only.',
     inputSchema: {
