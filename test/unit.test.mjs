@@ -15,6 +15,9 @@ test('settings: defaults are complete and frozen', () => {
   assert.equal(settings.resolution, '1280x960');
   assert.equal(settings.bindHost, '127.0.0.1');
   assert.equal(settings.allowExec, false);
+  // The agent drives by default; only an explicit setting makes the human own
+  // the pointer from the start.
+  assert.equal(settings.startHeldByUser, false);
 });
 
 test('settings: unknown keys are dropped and scalars coerced', () => {
@@ -23,6 +26,8 @@ test('settings: unknown keys are dropped and scalars coerced', () => {
   assert.equal(settings.allowExec, true);
   assert.equal(settings.bogus, undefined);
   assert.equal(settings.display, ':99');
+  assert.equal(normalizeSettings({ startHeldByUser: 'yes' }).startHeldByUser, true);
+  assert.equal(normalizeSettings({ startHeldByUser: 0 }).startHeldByUser, false);
 });
 
 test('settings: invalid numbers and resolutions fall back', () => {

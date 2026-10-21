@@ -15,7 +15,7 @@ bootstrap        # apt 安装 xvfb x11vnc xdotool imagemagick xclip openbox novn
 
 ```powershell
 cd <解压后的仓库目录>
-dsh plugin add .\dist\dsh-computer-use-wsl-0.1.5.tgz
+dsh plugin add .\dist\dsh-computer-use-wsl-0.1.6.tgz
 ```
 
 装完重启 DSH。判断成功：

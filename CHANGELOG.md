@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.6 — 2026-10-21
+
+- New setting **`startHeldByUser`** (default `false`). With `true` the desktop
+  starts already held by the human — the agent is in `USER_IN_CONTROL` from the
+  first call and must wait for 「交还给 DSH」. Default behaviour is unchanged:
+  the agent drives until someone takes over. Motivated by a fair question after
+  the takeover bug: "you couldn't even tell whether I had handed control back,
+  so why not make the human own it unless they let go?"
+- Tests: L0 asserts the default and the coercion; L7 boots a server with the
+  option on and proves `control_state` reports `user` and `click` is refused.
 ## 0.1.5 — 2026-10-21
 
 - Declare `dsh.compatibility.dshReleases: ["0.2.1-rc.2"]`, the release this

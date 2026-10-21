@@ -53,6 +53,11 @@ const control = new ControlState({
   }),
 });
 
+// Some users want the desktop to be theirs until they explicitly hand it over:
+// with `startHeldByUser` the agent begins in USER_IN_CONTROL and must wait for
+// 「交还给 DSH」 instead of driving straight away.
+if (settings.startHeldByUser) control.setUserActive(true);
+
 /** Last known desktop facts, kept fresh for the viewer shell. */
 const live = {
   ready: false,
