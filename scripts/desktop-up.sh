@@ -39,13 +39,15 @@ else
 fi
 
 # --- 2. Window manager (optional) -----------------------------------------
-# Scope the check to THIS display: a window manager running on :99 must not
-# make us skip starting one on the test display.
+# Scope the check to THIS display, and verify the manager is actually alive:
+# `_NET_SUPPORTING_WM_CHECK` survives the manager that set it, so a dead
+# openbox used to look healthy while clicks never focused anything and every
+# key press was dropped (picture fine, keyboard dead).
 if command -v openbox >/dev/null 2>&1; then
-  if ! DISPLAY="$D" xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q 'window id'; then
+  if ! wm_alive "$D"; then
     DISPLAY="$D" setsid nohup openbox </dev/null >"$LOG/openbox-${NUM_DISPLAY}.log" 2>&1 &
     write_pid "$!" "openbox-${NUM_DISPLAY}"
-    wait_until "DISPLAY='$D' xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q 'window id'" 30 || true
+    wait_until "wm_alive '$D'" 30 || true
   fi
 fi
 

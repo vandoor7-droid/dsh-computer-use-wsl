@@ -35,6 +35,7 @@ run "L2b viewer state" "$NODE" test/viewer-state.mjs
 run "L4 host mode stub" "$NODE" test/transport-stub.mjs
 run "L5 bundle patch" "$NODE" test/bundle-patch.mjs
 run "L6 client module" "$NODE" test/client-module.mjs
+run "L7 shared control" "$NODE" test/control-shared.mjs
 
 echo
 printf '%-6s %-22s %s\n' "RESULT" "LAYER" "TIME"

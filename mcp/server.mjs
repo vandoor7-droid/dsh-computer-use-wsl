@@ -8,16 +8,25 @@
  */
 
 import { createInterface } from 'node:readline';
+import { readFileSync } from 'node:fs';
+import { hostname } from 'node:os';
 import { normalizeSettings, parseResolution } from '../lib/settings.mjs';
 import { createTransport } from './transport.mjs';
 import { createDesktop } from './desktop.mjs';
 import { createCapture } from './capture.mjs';
 import { createInput } from './input.mjs';
 import { ControlState, ControlError } from './takeover.mjs';
+import { ControlFile } from './control-store.mjs';
 import { startViewerServer } from './viewer-server.mjs';
 import { sh } from './transport.mjs';
 
-const VERSION = '0.1.0';
+const VERSION = (() => {
+  try {
+    return JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
+  } catch {
+    return '0.0.0';
+  }
+})();
 
 function loadSettings() {
   const raw = process.env.WSLCU_SETTINGS_JSON;
@@ -36,7 +45,13 @@ const transport = createTransport(settings, { log });
 const desktop = createDesktop({ transport, settings });
 const capture = createCapture({ transport, settings, desktop });
 const input = createInput({ transport, desktop });
-const control = new ControlState({ holdMs: settings.agentStateHoldMs });
+const control = new ControlState({
+  holdMs: settings.agentStateHoldMs,
+  store: new ControlFile({
+    dir: settings.stateDir || '/tmp/wslcu',
+    owner: `${hostname()}/${process.pid}`,
+  }),
+});
 
 /** Last known desktop facts, kept fresh for the viewer shell. */
 const live = {
@@ -191,6 +206,7 @@ const tools = [
         displaySize: probe.DISPLAY_SIZE || '',
         ready: probe.DISPLAY_ALIVE === '1' && probe.WEB_ALIVE === '1',
         owned: live.owned,
+        control: control.get(),
         vncPort: live.vncPort,
         webPort: live.webPort,
         sidebarUrl: live.sidebarUrl || probe.info?.sidebarUrl || '',
@@ -198,6 +214,28 @@ const tools = [
         state: control.get().state,
         missingTools: probe.TOOLS_MISSING || '',
         hint: 'Open viewerUrl in the sidebar (or call sidebar_open with it) so the human can watch and take over.',
+      };
+    },
+  },
+  {
+    name: 'control_state',
+    description: 'Read-only: who owns the pointer right now. The answer is shared across every instance driving this desktop (plugin, scripts, second profile), so a takeover started anywhere is visible everywhere. Check before acting when a human may be using the desktop.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    handler: async () => {
+      startTicker();
+      const state = control.get();
+      return {
+        ok: true,
+        holder: state.state,
+        by: state.by || '',
+        since: state.since,
+        tool: state.tool || '',
+        shared: Boolean(state.shared),
+        humanInControl: state.state === 'user',
+        hint:
+          state.state === 'user'
+            ? 'The human owns the desktop; mutating tools are refused until they hand it back.'
+            : 'The agent may drive the desktop.',
       };
     },
   },

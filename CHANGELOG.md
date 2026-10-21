@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.1.3 — 2026-10-21
+
+- **Control state is shared across instances.** Takeover used to live in process
+  memory, so a second entry point driving the same desktop (a script, a second
+  profile) still saw `idle` and kept moving the pointer after the human clicked
+  「我要接管」. Ownership is now written to `$stateDir/control.json` with atomic
+  writes and a heartbeat; a record older than 8 s is treated as released, and
+  claiming `user` never steals a claim that is still alive.
+- **New read-only tool `control_state`** (17 tools total): reports who owns the
+  pointer, since when, and whether it is shared — so an agent can check before
+  acting instead of discovering the takeover from an error. `health` carries the
+  same `control` object.
+- **Window-manager check fixed.** `_NET_SUPPORTING_WM_CHECK` survives the
+  manager that set it, so a dead openbox looked healthy: the picture streamed
+  fine while clicks never focused a window and every key press was dropped
+  (exactly the "can see it but cannot type" failure). `wm_alive()` now verifies
+  the WM window still exists before deciding to skip `openbox`.
+- Tests: **L7 shared control** spawns two independent servers on one desktop and
+  proves a takeover in one is enforced in the other, that handing back clears it,
+  and that a stale holder cannot lock the desktop forever.
+
 ## 0.1.2 — 2026-10-21
 
 - **Daemons now survive the launching session.** `nohup` alone was not enough:
