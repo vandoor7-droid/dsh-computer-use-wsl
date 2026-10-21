@@ -1,15 +1,16 @@
 /**
  * Who owns the pointer: the agent, or the human?
  *
- * The state machine is deliberately tiny and synchronous — it is consulted on
- * every input call, so it must never block on I/O.
- *
  *   idle  --input tool-->  agent  --(no touch for holdMs)-->  idle
  *   any   --takeover-->    user   --release------------->  idle
  *
  * While `user` owns the desktop, every mutating tool throws USER_IN_CONTROL.
- * Observation tools (snapshot / windows / health) keep working: the model must
- * be able to look at what the human is doing without fighting for the pointer.
+ * Observation tools (snapshot / windows / health / control_state) keep working:
+ * the model must be able to see who holds the pointer without fighting for it.
+ *
+ * Ownership is also written to the shared ControlFile, so a second instance
+ * driving the same desktop sees the same answer instead of silently bypassing
+ * the human's takeover.
  */
 
 export const USER_IN_CONTROL = 'USER_IN_CONTROL';
@@ -24,7 +25,7 @@ export class ControlError extends Error {
 }
 
 export class ControlState {
-  constructor({ holdMs = 3000, now = () => Date.now() } = {}) {
+  constructor({ holdMs = 3000, now = () => Date.now(), store = null } = {}) {
     this.holdMs = Math.max(200, Number(holdMs) || 3000);
     this.now = now;
     this.state = 'idle';
@@ -32,6 +33,8 @@ export class ControlState {
     this.since = this.now();
     this.listeners = new Set();
     this.agentUntil = 0;
+    this.store = store;
+    this.by = store?.owner || '';
   }
 
   subscribe(listener) {
@@ -50,28 +53,55 @@ export class ControlState {
     }
   }
 
-  /** Current observable state, after applying the hold timer. */
+  /** Live record written by any instance, or null when absent/stale. */
+  shared() {
+    if (!this.store) return null;
+    const record = this.store.read();
+    return record && !record.stale ? record : null;
+  }
+
+  /** Current observable state, after applying the hold timer and shared state. */
   get() {
     if (this.state === 'agent' && this.now() >= this.agentUntil) {
       this.state = 'idle';
       this.tool = '';
       this.since = this.now();
     }
+
+    const shared = this.shared();
+    // Somebody else holds it for the human: that wins over local bookkeeping.
+    if (shared && shared.holder === 'user' && shared.by !== this.by) {
+      return {
+        state: 'user',
+        tool: '',
+        since: Number(shared.since) || this.since,
+        by: shared.by,
+        holdMs: this.holdMs,
+        remainingMs: 0,
+        shared: true,
+      };
+    }
+
     return {
       state: this.state,
       tool: this.tool,
       since: this.since,
+      by: shared?.by || this.by,
       holdMs: this.holdMs,
       remainingMs: this.state === 'agent' ? Math.max(0, this.agentUntil - this.now()) : 0,
+      shared: Boolean(shared),
     };
   }
 
   /** Called right before a mutating tool runs; throws when the human owns it. */
   assertAgentMayAct(tool) {
-    if (this.state === 'user') {
+    const shared = this.shared();
+    const humanOwns = (shared && shared.holder === 'user') || this.state === 'user';
+    if (humanOwns) {
+      const by = shared?.by && shared.by !== this.by ? ` (held by ${shared.by})` : '';
       throw new ControlError(
         USER_IN_CONTROL,
-        `The human is in control of the desktop (tool: ${tool}). Do not fight for the pointer; ask them to hand it back, or wait.`,
+        `The human is in control of the desktop${by} (tool: ${tool}). Do not fight for the pointer; ask them to hand it back, or wait.`,
         { state: this.get() },
       );
     }
@@ -84,12 +114,23 @@ export class ControlState {
     const now = this.now();
     if (this.agentUntil === 0) this.since = now;
     this.agentUntil = now + this.holdMs;
+    this.store?.claim('agent', { tool });
     this.emit();
   }
 
   /** Human takes over (`true`) or hands back (`false`). */
   setUserActive(active) {
-    this.state = active ? 'user' : 'idle';
+    if (active) {
+      const record = this.store?.claim('user');
+      // Another live instance already holds it: mirror that instead of stealing.
+      if (record && record.by && record.by !== this.by && record.holder === 'user') {
+        return this.get();
+      }
+      this.state = 'user';
+    } else {
+      this.store?.release();
+      this.state = 'idle';
+    }
     this.tool = '';
     this.since = this.now();
     this.agentUntil = 0;
@@ -105,6 +146,7 @@ export class ControlState {
       this.since = this.now();
       this.emit();
     }
+    if (this.state !== 'idle') this.store?.heartbeat();
     return this.get();
   }
 }

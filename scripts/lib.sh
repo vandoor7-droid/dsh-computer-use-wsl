@@ -42,6 +42,27 @@ display_alive() {
   DISPLAY="$1" xdpyinfo >/dev/null 2>&1
 }
 
+# Is a *live* window manager managing this display?
+#
+# `_NET_SUPPORTING_WM_CHECK` lives on the root window and survives the manager
+# that set it: when openbox dies the property still points at a window that no
+# longer exists. A naive `xprop ... | grep 'window id'` therefore reports a
+# healthy desktop on a display where clicks never move focus and every key
+# press is silently dropped (picture fine, keyboard dead). Verify the window.
+wm_alive() {
+  local display="$1" wid
+  wid="$(DISPLAY="$display" xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null |
+    sed -n 's/.*window id # \(0x[0-9a-fA-F]*\).*/\1/p')"
+  [ -n "$wid" ] || return 1
+  DISPLAY="$display" xwininfo -id "$wid" >/dev/null 2>&1 ||
+    DISPLAY="$display" xprop -id "$wid" _NET_WM_NAME >/dev/null 2>&1
+}
+
+# Id of the window holding input focus (empty when nothing is focused).
+focus_window() {
+  DISPLAY="$1" xdotool getactivewindow 2>/dev/null || true
+}
+
 # Wait until a predicate command succeeds, up to $2 tenths of a second.
 wait_until() {
   local i=0 limit="${2:-50}"

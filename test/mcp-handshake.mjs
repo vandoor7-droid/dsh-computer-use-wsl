@@ -18,9 +18,9 @@ const SETTINGS = {
 };
 
 const EXPECTED = [
-  'health', 'desktop_up', 'desktop_down', 'bootstrap', 'snapshot', 'windows',
-  'wait_window', 'click', 'move', 'drag', 'scroll', 'type_text', 'key',
-  'takeover', 'exec',
+  'health', 'control_state', 'desktop_up', 'desktop_down', 'bootstrap', 'launch',
+  'snapshot', 'windows', 'wait_window', 'click', 'move', 'drag', 'scroll',
+  'type_text', 'key', 'takeover', 'exec',
 ];
 
 const results = [];
