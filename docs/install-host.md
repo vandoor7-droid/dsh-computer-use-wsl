@@ -57,3 +57,53 @@ dsh plugin remove dsh-computer-use-wsl
 | 侧边栏白屏 | 确认 `viewerUrl` 端口可达；`websockify` 默认只绑回环，跨机访问需自行改 `bindHost` |
 | 画面能看不能点 | 你处于接管状态（胶囊显示「你正在操作」）；点「交还给 DSH」 |
 | 中文打不进去 | 目标应用若不支持 `ctrl+v`，改用 `type_text { pasteChord: "middle" }` |
+## 故障排查
+
+### 桌面「整条栈消失」：Xvfb / x11vnc / noVNC 全都不在
+
+现象：`curl http://127.0.0.1:6081/state` 连不上，`pgrep -af 'Xvfb :99'` 无输出，5900/6080/6081 全部 down。
+
+原因：**WSL 被回收**（`vmIdleTimeout` 到期、`wsl --shutdown`、或系统休眠），VM 里所有进程随之消失——不是插件杀进程。
+
+恢复：插件侧的 `desktop_up` 是幂等的，直接重新拉起即可：
+
+```bash
+# 在 WSL 里
+node /path/to/mcp/server.mjs --self-test      # 或直接调用健康检查
+```
+
+最省事的做法是让宿主 DSH 重新 `health` + `desktop_up`（`desktop_up` 会重建 Xvfb → openbox → x11vnc → websockify）。
+浏览器数据在磁盘上（`--user-data-dir`），重新打开 Chrome 时**登录态通常还在**，无需重新登录。
+
+### 画面正常但键盘打不了字、点击也不聚焦
+
+原因：窗口管理器（openbox）死了，但 `_NET_SUPPORTING_WM_CHECK` 属性残留在 root window 上，旧的存活检查被它骗过。
+
+现在的实现：`wm_alive()` 会 `xwininfo -id <wm-window>` 校验那个窗口是否真的存在，不存在就重启 openbox。
+手工确认：
+
+```bash
+DISPLAY=:99 xprop -root _NET_SUPPORTING_WM_CHECK   # 拿到 window id
+DISPLAY=:99 xwininfo -id 0x<id>                    # 不存在 = WM 已死
+DISPLAY=:99 setsid nohup openbox &
+```
+
+### x11vnc 启动即退出，日志里有 `Wayland display server detected`
+
+原因：WSL 会话导出了 `XDG_SESSION_TYPE=wayland` / `WAYLAND_DISPLAY`，x11vnc 检测到就走 Wayland 分支并退出。
+
+`scripts/desktop-up.sh` 开头已经 `unset WAYLAND_DISPLAY XDG_SESSION_TYPE XDG_SESSION_ID`；手工启动时必须同样处理。
+
+### 侧边栏显示「Failed to connect」但桌面是活的
+
+1. 确认 x11vnc 在跑：`pgrep -af x11vnc`；
+2. 确认 websockify 在跑且指向 VNC 端口：`pgrep -af websockify`；
+3. viewer 壳里点「重连画面」，或直接刷新侧边栏标签。
+
+### `dsh plugin add` 报 `SyntaxError: Unexpected token '﻿'`
+
+`package.json` 带了 UTF-8 BOM。DSH 用严格 JSON 解析，必须无 BOM：
+
+```bash
+node -e "const fs=require('fs');const p='package.json';fs.writeFileSync(p,fs.readFileSync(p,'utf8').replace(/^\uFEFF/,''))"
+```
