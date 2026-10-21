@@ -45,7 +45,7 @@ DSH (Windows 或 WSL 内)
 
 ```bash
 # 在 DSH 所在的机器上
-dsh plugin add ./dsh-computer-use-wsl-0.1.6.tgz
+dsh plugin add ./dsh-computer-use-wsl-0.1.7.tgz
 ```
 
 重启 DSH 后，模型侧出现 17 个 `mcp__wslcu__*` 工具。回滚：
@@ -102,6 +102,7 @@ desktop_down                # 只停自己起的进程
 | `snapshot` / `windows` / `wait_window` | 观察 |
 | `click` / `move` / `drag` / `scroll` / `type_text` / `key` | 输入（接管期间全部拒绝） |
 | `takeover` | 人工接管开关 |
+| `read_all_text` | 读取当前页面/文档全文（全选+复制，无需识图；自动还原剪贴板） |
 | `exec` | 在发行版内跑命令（默认关闭 + 危险命令固定拒绝） |
 
 ## 配置

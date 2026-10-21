@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.7 — 2026-10-21
+
+- New tool **`read_all_text`** (18 tools): select-all + copy in the focused
+  document, read the X clipboard, restore the caller's previous clipboard.
+  Vision-free and greppable — for reading a page it is cheaper and far more
+  reliable than a screenshot, and it avoids shipping another image into the
+  model context. Changes the selection, so it is gated by the takeover state
+  like every other mutating tool.
 ## 0.1.6 — 2026-10-21
 
 - New setting **`startHeldByUser`** (default `false`). With `true` the desktop

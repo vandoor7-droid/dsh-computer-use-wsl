@@ -20,7 +20,7 @@ const SETTINGS = {
 const EXPECTED = [
   'health', 'control_state', 'desktop_up', 'desktop_down', 'bootstrap', 'launch',
   'snapshot', 'windows', 'wait_window', 'click', 'move', 'drag', 'scroll',
-  'type_text', 'key', 'takeover', 'exec',
+  'type_text', 'key', 'read_all_text', 'takeover', 'exec',
 ];
 
 const results = [];

@@ -37,3 +37,24 @@ dsh plugin --profile lab add /opt/wslcu-dist/dsh-computer-use-wsl-0.1.6.tgz
 不是插件自己的设置项；插件设置（`display`、`stateDir` 等）走 `DSH` 的设置面板 / `WSLCU_SETTINGS_JSON`。
 
 测试基线（同版本）：`bash scripts/verify.sh` → L0/L1/L2/L2b/L4/L5/L6/L7 **全绿**。
+## 2026-10-21 · v0.1.7
+
+| 项 | 值 |
+|---|---|
+| 产物 | `dsh-computer-use-wsl-0.1.7.tgz` |
+| 大小 | 39,335 B |
+| SHA-256 | `f7806936ce8ea5d631ba5674d327dd1a9d82044d34b11749ae5037ad2605c68d` |
+| DSH | `0.2.1-rc.2` |
+| 升级路径 | 0.1.6 → 0.1.7（同 profile 就地升级成功） |
+
+```bash
+dsh plugin --profile lab add /opt/wslcu-dist/dsh-computer-use-wsl-0.1.7.tgz
+# dependencies:
+# - dsh-computer-use-wsl 0.1.6
+# + dsh-computer-use-wsl 0.1.7
+# Done in 103ms using pnpm v12.14.0
+```
+
+`--dump-config` 仍正确组合出 `id: mcp-dsh-computer-use-wsl`；工具面 18 个（新增 `read_all_text`）。
+
+实机验证（`:99` 上的华为云控制台页）：`read_all_text` 返回 `{"bytes":2296,"truncated":false}` 并给出可 grep 的页面正文。

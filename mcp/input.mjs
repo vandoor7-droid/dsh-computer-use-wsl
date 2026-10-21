@@ -144,6 +144,32 @@ export class Input {
     await this.script(`xdotool key --clearmodifiers ${sh(chord)}`);
     return { chord };
   }
+
+  /**
+   * Read the focused document as text: select-all + copy, then read the X
+   * clipboard, and put the caller's previous clipboard back.
+   *
+   * This is the cheap, vision-free way to find out what is on screen: browsers,
+   * editors and most toolkits implement ctrl+a / ctrl+c, and the result is
+   * greppable and diffable where a screenshot is neither. Mutating only in the
+   * sense that it changes the selection.
+   */
+  async readAllText({ maxChars = 200000 } = {}) {
+    const script = [
+      'OLD_C="$(xclip -o -selection clipboard 2>/dev/null || true)"',
+      'xdotool key --clearmodifiers ctrl+a',
+      'sleep 0.15',
+      'xdotool key --clearmodifiers ctrl+c',
+      'sleep 0.25',
+      'xclip -o -selection clipboard 2>/dev/null || true',
+      `if [ -n "$OLD_C" ]; then printf '%s' "$OLD_C" | xclip -selection clipboard -i >/dev/null 2>&1; fi`,
+    ].join('\n');
+    const result = await this.script(script, { timeoutMs: 30000 });
+    const text = String(result.stdout || '');
+    const limit = Number(maxChars) > 0 ? Number(maxChars) : 0;
+    const out = limit ? text.slice(0, limit) : text;
+    return { text: out, bytes: Buffer.byteLength(text, 'utf8'), truncated: out.length < text.length };
+  }
 }
 
 export function createInput(options) {
