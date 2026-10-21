@@ -33,6 +33,8 @@ run "L1 mcp handshake" "$NODE" test/mcp-handshake.mjs
 run "L2 backend e2e" "$NODE" test/e2e.mjs
 run "L2b viewer state" "$NODE" test/viewer-state.mjs
 run "L4 host mode stub" "$NODE" test/transport-stub.mjs
+run "L5 bundle patch" "$NODE" test/bundle-patch.mjs
+run "L6 client module" "$NODE" test/client-module.mjs
 
 echo
 printf '%-6s %-22s %s\n' "RESULT" "LAYER" "TIME"

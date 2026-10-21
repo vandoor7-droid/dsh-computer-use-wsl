@@ -128,10 +128,13 @@ node test/mcp-handshake.mjs   # L1 MCP 协议
 node test/e2e.mjs             # L2 后端 e2e（专用 :98，不碰你的 :99）
 node test/viewer-state.mjs    # L2b 视图状态机 + SSE
 node test/transport-stub.mjs  # L4 宿主模式（假 wsl.exe）
+node test/bundle-patch.mjs    # L5 真实组合：用 DSH 官方 entryListSchema + applyEntryPatches
+node test/client-module.mjs   # L6 客户端模块契约（设置卡注册）
 scripts/verify.sh             # 全部
 ```
 
 L2/L2b/L4 需要 Linux X 栈（Xvfb、xdotool、imagemagick、xclip），在发行版内跑。
+L5 需要本机装有 DSH（找不到时自动 SKIP，不报错）。
 
 ## 已知边界
 
