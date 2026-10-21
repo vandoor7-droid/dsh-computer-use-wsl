@@ -8,6 +8,7 @@ import { normalizeSettings, DEFAULTS, parseResolution } from '../lib/settings.mj
 import { sh, detectKind } from '../mcp/transport.mjs';
 import { parseKeyValues } from '../mcp/desktop.mjs';
 import { ControlState, ControlError, USER_IN_CONTROL } from '../mcp/takeover.mjs';
+import { textMatches, hasCondition } from '../mcp/text-match.mjs';
 
 test('settings: defaults are complete and frozen', () => {
   const settings = normalizeSettings({});
@@ -99,4 +100,22 @@ test('control: a throwing subscriber cannot break the tool path', () => {
     throw new Error('boom');
   });
   assert.doesNotThrow(() => state.touch('click'));
+});
+test('textMatches: contains / absent / regex combine with AND', () => {
+  const text = '正在部署… / 部署成功 / 共 3 项';
+  assert.equal(textMatches(text, { contains: '部署成功' }), true);
+  assert.equal(textMatches(text, { contains: '部署失败' }), false);
+  assert.equal(textMatches(text, { absent: '正在部署' }), false);
+  assert.equal(textMatches(text, { contains: '部署成功', absent: '正在部署' }), false);
+  assert.equal(textMatches(text, { regex: '共\\s*\\d+\\s*项' }), true);
+  assert.equal(textMatches(text, { regex: '(' }), false, 'an invalid pattern never matches');
+});
+
+test('textMatches: case-insensitive by default, and empty conditions match', () => {
+  assert.equal(textMatches('Deployed OK', { contains: 'deployed ok' }), true);
+  assert.equal(textMatches('Deployed OK', { contains: 'deployed ok', ignoreCase: false }), false);
+  assert.equal(textMatches('x', {}), true);
+  assert.equal(hasCondition({}), false);
+  assert.equal(hasCondition({ contains: '' }), false);
+  assert.equal(hasCondition({ contains: 'a' }), true);
 });

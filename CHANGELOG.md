@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.8 — 2026-10-21
+
+- New tool **`wait_text`** (19 tools): poll `read_all_text` until the page text
+  *contains* something, *loses* something, or *matches* a regex, with a timeout.
+  Replaces blind `sleep` before asserting that a slow operation finished
+  ("部署成功 出现", "加载中 消失"). The matcher lives in `mcp/text-match.mjs` so
+  its AND semantics (contains + absent + regex) are unit-tested without a
+  desktop; an invalid regex never matches instead of throwing mid-wait.
 ## 0.1.7 — 2026-10-21
 
 - New tool **`read_all_text`** (18 tools): select-all + copy in the focused

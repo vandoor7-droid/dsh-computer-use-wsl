@@ -58,3 +58,17 @@ dsh plugin --profile lab add /opt/wslcu-dist/dsh-computer-use-wsl-0.1.7.tgz
 `--dump-config` 仍正确组合出 `id: mcp-dsh-computer-use-wsl`；工具面 18 个（新增 `read_all_text`）。
 
 实机验证（`:99` 上的华为云控制台页）：`read_all_text` 返回 `{"bytes":2296,"truncated":false}` 并给出可 grep 的页面正文。
+## 2026-10-21 · v0.1.8
+
+| 项 | 值 |
+|---|---|
+| 产物 | `dsh-computer-use-wsl-0.1.8.tgz` |
+| 大小 | 40646 B |
+| SHA-256 | `6fc34048b2b954afaba414d6cd65283e63f3604e486be6c1b24ce9d905a3d8d1` |
+| DSH | `0.2.1-rc.2`（同 profile 就地升级 0.1.7 → 0.1.8） |
+| 工具面 | 19 个（新增 `wait_text`） |
+
+实机验证（`:99` 华为云控制台）：
+
+    wait_text {contains:"公测"}  → {"matched":true,"waitedMs":542,"bytes":2296}
+    wait_text {contains:"不存在的词"} → {"matched":false,"waitedMs":1574}   # 超时正确返回 false
