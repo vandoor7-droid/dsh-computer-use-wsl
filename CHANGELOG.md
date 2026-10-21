@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.10 — 2026-10-21
+
+- Documented three traps found by a full end-to-end run on a local form page
+  (click input → type CJK → click button → wait for result):
+  1. windowed Chrome shifts page coordinates by the chrome height (~90 px);
+     fullscreen (F11) makes page and screen coordinates agree;
+  2. Chrome's "Restore pages?" bubble covers the top-left corner, swallows
+     clicks, and Escape does not dismiss it — click its X;
+  3. `read_all_text` reads the focused *input's* value when focus is in a text
+     field, not the page, so `wait_text` can poll the wrong text. Call
+     `read_all_text`'s description and the README now say so.
+- The tool itself is unchanged; this is a documentation release, because these
+  are usage rules rather than bugs.
+- **prepack gate hardened**: scripts/pack-check.mjs now also runs
+  
+ode --check on every shipped module. An unescaped apostrophe in a tool
+  description had slipped through packing and broke *every* runtime layer at
+  once — a typo must fail the pack, not the test suite.
 ## 0.1.9 — 2026-10-21
 
 - **Verified on DSH `0.2.0-rc.2` as well as `0.2.1-rc.2`**, and both are now

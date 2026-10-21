@@ -7,8 +7,12 @@
  */
 
 import { readdir, readFile, stat } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+const run = promisify(execFile);
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'reference', 'artifacts']);
@@ -59,6 +63,29 @@ for (const required of [
     await stat(path.join(ROOT, required));
   } catch {
     problems.push(`missing required file: ${required}`);
+  }
+}
+
+if (problems.length) {
+  console.error('pack-check failed:');
+  for (const problem of problems) console.error(`  - ${problem}`);
+  process.exit(1);
+}
+
+// Syntax-check every shipped module. A stray apostrophe in a string is the
+// kind of typo that only shows up when the server is spawned at runtime, so it
+// has to fail the pack instead — it did once (an unescaped `input's` inside a
+// single-quoted description) and every layer failed at once.
+const targets = [
+  ...(await walk(path.join(ROOT, 'mcp'))).filter((f) => f.endsWith('.mjs')),
+  ...(await walk(path.join(ROOT, 'lib'))).filter((f) => /\.(mjs|js)$/.test(f)),
+];
+for (const file of new Set(targets)) {
+  try {
+    await run(process.execPath, ['--check', file]);
+  } catch (error) {
+    const first = String(error.stderr || error.message || '').split('\n').find((l) => l.trim()) || 'unknown error';
+    problems.push(`syntax error in ${path.relative(ROOT, file)}: ${first.trim()}`);
   }
 }
 
