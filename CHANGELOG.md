@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.9 — 2026-10-21
+
+- **Verified on DSH `0.2.0-rc.2` as well as `0.2.1-rc.2`**, and both are now
+  declared in `dsh.compatibility.dshReleases`. The 0.2.0 check was added after
+  inspecting the host deployment and finding it a minor version older than the
+  one the package was tested against; installing on the host would otherwise
+  have been an unverified claim. Composition checked with the real CLI on that
+  release:
+  `dsh plugin --profile lab add dsh-computer-use-wsl-0.1.9.tgz` →
+  `+ dsh-computer-use-wsl 0.1.9`, and `--dump-config` still emits
+  `mcp-dsh-computer-use-wsl`.
 ## 0.1.8 — 2026-10-21
 
 - New tool **`wait_text`** (19 tools): poll `read_all_text` until the page text

@@ -72,3 +72,26 @@ dsh plugin --profile lab add /opt/wslcu-dist/dsh-computer-use-wsl-0.1.7.tgz
 
     wait_text {contains:"公测"}  → {"matched":true,"waitedMs":542,"bytes":2296}
     wait_text {contains:"不存在的词"} → {"matched":false,"waitedMs":1574}   # 超时正确返回 false
+## 2026-10-21 · v0.1.9（补验 DSH 0.2.0-rc.2）
+
+背景：宿主部署实测为 **DSH 0.2.0-rc.2**，比此前验证的 0.2.1-rc.2 低一个版本。
+装上之前必须补验，否则"兼容"只是声明。
+
+| 项 | 值 |
+|---|---|
+| 产物 | `dsh-computer-use-wsl-0.1.9.tgz` |
+| 大小 | 40,870 B |
+| SHA-256 | `f1d461d36a84a05b7e6400a552debf765e32066a70832ea4bab4f5196f388d9f` |
+| DSH | `0.2.0-rc.2`（独立 prefix `/opt/dsh020`，独立 `DSH_HOME=/root/.dsh-lab-020`） |
+| 结果 | 安装成功并正确组合 |
+
+    dsh plugin --profile lab add dsh-computer-use-wsl-0.1.9.tgz
+    # - dsh-computer-use-wsl 0.1.8
+    # + dsh-computer-use-wsl 0.1.9
+    # Done in 98ms using pnpm v12.14.0
+
+    dsh --profile lab --dump-config
+    # - id: mcp-dsh-computer-use-wsl
+    #   name: dsh-computer-use-wsl
+
+`dsh.compatibility.dshReleases` 因此更新为 `["0.2.0-rc.2", "0.2.1-rc.2"]`。
