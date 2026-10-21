@@ -91,6 +91,25 @@ try {
     return 'B: idle, click allowed';
   });
 
+  await step('instance B sees A driving (badge must not read idle)', async () => {
+    // A moves the pointer just now; the viewer instance (B) must report
+    // 「DSH 操作中」, not 空闲 — otherwise the human cannot tell the agent acts.
+    await agent.callTool('click', { x: 20, y: 20 });
+    const { value } = await other.callTool('control_state', {});
+    assert.equal(value.holder, 'agent', JSON.stringify(value));
+    assert.equal(value.tool, 'click', JSON.stringify(value));
+    return `B sees holder=agent tool=${value.tool} by=${value.by}`;
+  });
+
+  await step('badge falls back to idle when the driving hold expires', async () => {
+    // The shared record outlives the action; the viewer must not stay on
+    // 「DSH 操作中」 once holdMs has passed (holdMs is 800ms in this test).
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    const { value } = await other.callTool('control_state', {});
+    assert.equal(value.holder, 'idle', `badge stuck on agent: ${JSON.stringify(value)}`);
+    return 'back to idle';
+  });
+
   await step('a stale takeover releases the desktop', async () => {
     writeFileSync(
       join(STATE_DIR, 'control.json'),

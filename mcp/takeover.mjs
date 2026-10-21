@@ -35,6 +35,7 @@ export class ControlState {
     this.agentUntil = 0;
     this.store = store;
     this.by = store?.owner || '';
+    this.lastReported = 'idle';
   }
 
   subscribe(listener) {
@@ -78,6 +79,25 @@ export class ControlState {
         by: shared.by,
         holdMs: this.holdMs,
         remainingMs: 0,
+        shared: true,
+      };
+    }
+
+    // Somebody else is driving: show it, otherwise every instance but the one
+    // actually moving the pointer reports 「空闲」 while the desktop is busy.
+    // Only while the hold window is still open — the shared record outlives the
+    // action (it stays until STALE_MS), so a plain `holder === 'agent'` check
+    // would keep the badge lit long after the last click.
+    const sharedAgentFresh =
+      shared && shared.holder === 'agent' && shared.by !== this.by && this.now() < Number(shared.hb || 0) + this.holdMs;
+    if (sharedAgentFresh) {
+      return {
+        state: 'agent',
+        tool: shared.tool || '',
+        since: Number(shared.since) || this.since,
+        by: shared.by,
+        holdMs: this.holdMs,
+        remainingMs: Math.max(0, Number(shared.hb || 0) + this.holdMs - this.now()),
         shared: true,
       };
     }
@@ -144,9 +164,16 @@ export class ControlState {
       this.state = 'idle';
       this.tool = '';
       this.since = this.now();
-      this.emit();
     }
     if (this.state !== 'idle') this.store?.heartbeat();
-    return this.get();
+    // Emit whenever the *reported* state changes, including when a shared
+    // `agent` record from another instance expires and the badge must go back
+    // to 空闲 without any local action happening.
+    const reported = this.get();
+    if (reported.state !== this.lastReported) {
+      this.lastReported = reported.state;
+      this.emit();
+    }
+    return reported;
   }
 }

@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.4 — 2026-10-21
+
+- **The badge now matches reality across instances.** `ControlState.get()` merged
+  a shared `user` claim but ignored a shared `agent` one, so while a script or a
+  second profile was moving the pointer the sidebar still said 「空闲」 — the
+  human had no way to tell the agent was acting. Shared `agent` records are now
+  merged too (with the owning instance id and the tool name).
+- **The badge clears when the hold expires.** A shared record stays on disk
+  until the staleness window (8 s) closes, so a plain `holder === 'agent'` check
+  kept 「DSH 操作中」 lit for seconds after the last click. The merge is now
+  bounded by `holdMs`, and the viewer ticker emits whenever the *reported* state
+  changes, so the pill returns to 空闲 without waiting for another tool call.
+- Tests: L7 gained "B sees A driving" and "badge falls back to idle when the
+  driving hold expires", both of which failed before this change.
 ## 0.1.3 — 2026-10-21
 
 - **Control state is shared across instances.** Takeover used to live in process
