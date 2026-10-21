@@ -134,6 +134,24 @@ try {
     );
     return `ghost holder ignored (holder=${value.holder})`;
   });
+
+  await step('startHeldByUser boots with the human holding the pointer', async () => {
+    const heldDir = '/tmp/wslcu-held-test';
+    rmSync(heldDir, { recursive: true, force: true });
+    const held = createClient({ ...SETTINGS(6118), stateDir: heldDir, startHeldByUser: true });
+    try {
+      await held.initialize();
+      const state = await held.callTool('control_state', {});
+      assert.equal(state.value.holder, 'user', JSON.stringify(state.value));
+      const click = await held.callTool('click', { x: 5, y: 5 });
+      assert.equal(click.isError, true, 'a held desktop must refuse input until handed back');
+      assert.match(String(click.value.raw || ''), /USER_IN_CONTROL/);
+      return 'starts held; click refused';
+    } finally {
+      await held.close();
+      rmSync(heldDir, { recursive: true, force: true });
+    }
+  });
 } finally {
   await agent.close();
   await other.close();

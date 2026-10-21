@@ -45,7 +45,7 @@ DSH (Windows 或 WSL 内)
 
 ```bash
 # 在 DSH 所在的机器上
-dsh plugin add ./dsh-computer-use-wsl-0.1.5.tgz
+dsh plugin add ./dsh-computer-use-wsl-0.1.6.tgz
 ```
 
 重启 DSH 后，模型侧出现 17 个 `mcp__wslcu__*` 工具。回滚：
@@ -116,6 +116,7 @@ desktop_down                # 只停自己起的进程
 | `screenshotDir` / `stateDir` | `~/.cache` 派生 / `/tmp/wslcu` | 均在 Linux 侧 |
 | `bindHost` | `127.0.0.1` | 仅回环 |
 | `agentStateHoldMs` | `3000` | 「DSH 操作中」的保持时间 |
+| `startHeldByUser` | `false` | `true` = 启动即由人持有，agent 必须等「交还给 DSH」才能操作 |
 | `allowExec` | `false` | 是否允许 `exec` |
 | `failOnStartupError` | `false` | 后端挂了不影响 DSH 启动 |
 
