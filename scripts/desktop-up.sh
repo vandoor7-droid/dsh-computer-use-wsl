@@ -26,7 +26,7 @@ if display_alive "$D"; then
   XVFB_OWNED=0
   XVFB_PID="$(read_pid "xvfb-${NUM_DISPLAY}")"
 else
-  nohup Xvfb "$D" -screen 0 "${RES}x24" -nolisten tcp </dev/null \
+  setsid nohup Xvfb "$D" -screen 0 "${RES}x24" -nolisten tcp </dev/null \
     >"$LOG/xvfb-${NUM_DISPLAY}.log" 2>&1 &
   XVFB_PID=$!
   XVFB_OWNED=1
@@ -43,7 +43,7 @@ fi
 # make us skip starting one on the test display.
 if command -v openbox >/dev/null 2>&1; then
   if ! DISPLAY="$D" xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q 'window id'; then
-    DISPLAY="$D" nohup openbox </dev/null >"$LOG/openbox-${NUM_DISPLAY}.log" 2>&1 &
+    DISPLAY="$D" setsid nohup openbox </dev/null >"$LOG/openbox-${NUM_DISPLAY}.log" 2>&1 &
     write_pid "$!" "openbox-${NUM_DISPLAY}"
     wait_until "DISPLAY='$D' xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q 'window id'" 30 || true
   fi
@@ -63,7 +63,7 @@ else
   else
     PW="$(cat "$LOG/vncpw")"
   fi
-  DISPLAY="$D" nohup x11vnc -display "$D" -rfbport "$VNC_PORT" -rfbauth "$LOG/vncpass" \
+  DISPLAY="$D" setsid nohup x11vnc -display "$D" -rfbport "$VNC_PORT" -rfbauth "$LOG/vncpass" \
     -forever -shared -noxdamage -nolookup \
     </dev/null >"$LOG/x11vnc-${NUM_DISPLAY}.log" 2>&1 &
   VNC_PID=$!
@@ -83,7 +83,7 @@ if port_busy "$WEB_PORT"; then
   WEB_PID="$(read_pid "websockify")"
 else
   if command -v websockify >/dev/null 2>&1; then
-    nohup websockify --web=/usr/share/novnc "${BIND}:${WEB_PORT}" "127.0.0.1:${VNC_PORT}" \
+    setsid nohup websockify --web=/usr/share/novnc "${BIND}:${WEB_PORT}" "127.0.0.1:${VNC_PORT}" \
       </dev/null >"$LOG/websockify-${NUM_DISPLAY}.log" 2>&1 &
     WEB_PID=$!
     WEB_OWNED=1
