@@ -120,7 +120,7 @@ const MUTATIONS = [
   {
     id: 'badge-alignment-dropped',
     file: 'lib/client.js',
-    find: 'calc(max(0px, (100% - var(--dsh-composer-card-max-width, 712px)) / 2) + var(--dsh-composer-side-clearance, 16px))',
+    find: 'calc(max(0px, (100% - var(--dsh-composer-card-max-width, 712px)) / 2))',
     replace: '0px',
     layer: 'L3',
     expect: 'aligns with the composer',

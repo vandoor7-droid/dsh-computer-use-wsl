@@ -128,8 +128,8 @@ test('contract: the TUI settings section covers the settings we ship', () => {
 
 test('contract: the badge aligns with the composer card', () => {
   const client = read('../lib/client.js');
-  assert.ok(client.includes('--dsh-composer-side-clearance'), 'clearance token');
   assert.ok(client.includes('--dsh-composer-card-max-width'), 'card width token');
+  assert.ok(/max\(0px, \(100% - var\(--dsh-composer-card-max-width/.test(client), 'centring guard');
 });
 
 test('contract: the badge honours reduced motion', () => {

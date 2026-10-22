@@ -212,3 +212,41 @@ PASS    L1        tool-renamed                    wsl_release
 首轮是 8/10，暴露并修掉两个盲点：`client-module` 只断言了 `register` 的 meta 名、
 没断言 `inject` 的槽位名；`mcp-handshake` 的 `EXPECTED` 漏了 `wsl_apply_perf` /
 `wsl_release` / `wsl_move_distro` 三个新工具。补齐后 10/10。
+## 0.3.2 — 0.2.1-rc.2 宿主上的对齐与动画实测（2026-10-22）
+
+宿主：`dsh web`（App 自带 CLI，`--version` = **0.2.1-rc.2**），1256×774，插件 0.3.2。
+
+### 对齐
+
+宿主 token（该版本实测）：`--dsh-composer-side-clearance: 16px`、
+`--dsh-composer-card-max-width: calc(clamp(680px, calc(976px * .64), 920px) + 32px)`。
+栈宽 744、卡片宽 712（两侧各 16 居中）。
+
+| 阶段 | badge.left | card.left | gap |
+|---|---|---|---|
+| 修复前 | 393 | 409 | **-16** |
+| 第一次修（多加了 clearance） | 425 | 409 | **+16** |
+| 最终 | **409** | **409** | **0** |
+
+### 呼吸动画（agent 态，间隔 800ms 采样两次以上）
+
+```
+t1  transform=scale(1.077)  dot-shadow=rgba(77,139,254,0.19) 0 0 0 3.44px  chip-shadow 0.024/0.66px
+t2  transform=scale(1.323)  dot-shadow=rgba(77,139,254,0.267) 0 0 0 4.82px chip-shadow 0.094/2.74px
+t3  transform=scale(1.007)  dot-shadow=rgba(77,139,254,0.165) 0 0 0 3.04px chip-shadow 0.004/0.06px
+```
+
+`未启动` 态（真实状态）：`transform=matrix(1,...)`, `box-shadow: none`，两次采样完全相同。
+
+`prefers-reduced-motion: reduce`（客户端边界把 `matchMedia` 置为 matches）：
+两次采样都是 `scale(1)` + `3.00px` 光环，**完全静止**。
+
+**取证方式说明**：宿主的 `/api/wslcu/status` 只反映宿主进程内自己启动过的 desktop，
+我用独立 MCP 实例起的桌面它看不到，路由始终回 `off`。所以动画验证在**客户端边界**做：
+拦截 `/api/wslcu/status` 返回 `state: "agent"`，再实测样式确实在呼吸——证明的是客户端
+渲染路径；后端状态机（off/idle/agent/user/released）由 L0 `five states`、L2b、L7 覆盖。
+
+### 其它
+
+- 反向验证 **13/13** 全红（新增：清单版本漂移、删对齐 padding、删 reduced-motion 分支）。
+- `dsh-plugin.json` 由 `pack-check` 与 L3 契约双重校验（version 跟随 package.json、字段 ⊆ Config 键）。

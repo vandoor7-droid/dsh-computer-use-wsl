@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.3.2 — 2026-10-22（对齐修正 + 呼吸动画 + 插件清单）
+
+**版本基准纠正**：桌面 App 的实际版本是 **0.2.1-rc.2**（`resources/runtime/runtime.json` 的
+`desktopVersion`，App 自带 CLI `--version` 也是它）；此前 lab 宿主用的是 npm 全局
+`@deepseek-ai/dsh`（0.2.0-rc.2），旧日志里的宿主版本应读作 0.2.0-rc.2。本版起 lab 验证
+统一跑在 **0.2.1-rc.2**（用 App 自带 CLI 起宿主）。
+
+- **徽标对齐**：宿主 dock 是拉伸的 flex 列，而输入卡片带自己的 `max-width`（内容宽 +
+  2×clearance）并在栈内居中，所以贴左边缘的徽标会偏出 16px（实测 393 vs 409）。改为外包
+  一层全宽 div，`padding-inline` 用
+  `calc(max(0px, (100% - var(--dsh-composer-card-max-width, 712px)) / 2))` 复刻居中量；
+  第一次尝试多加了 `--dsh-composer-side-clearance` 导致反向偏 16px，已修正。真机实测
+  **badge.left = card.left = 409**（gap 0）。
+- **呼吸/脉冲动画**：只对「DSH 操作中」「已人工接管」两种状态做 1.4s 呼吸（圆点
+  `scale(1→1.35)` + 光环扩散 + 徽标边框微亮），`未启动/空闲/已释放` 保持静止；
+  `prefers-reduced-motion: reduce` 时完全不动（每个节拍重新查一次，切换系统设置即时生效）。
+  只用 `transform`/`box-shadow`，不动布局。
+- **`dsh-plugin.json`**：新增 manifest（`manifestVersion: "0.15"`），`facets.host` 指向
+  `lib/index.js`，`contributes["x-dsh-tui"]` 带一个 `SettingsSection`（namespace
+  `dsh-computer-use-wsl`，8 个字段覆盖 7 个新配置项 + `distro`）。**故意不写
+  `compat.hosts`** —— `dsh-browser-cdp` 写的是 `["dsh-tui"]`，等于宣称只支持 TUI，可能
+  影响 Web 挂载。Web GUI 的配置表单仍走 `plugins.item` + `configForms`，清单只服务
+  TUI/插件市场。
+- **门禁**：L3 契约 6 → 10 条（清单一致性、字段覆盖、对齐 token、reduced-motion）；
+  `pack-check` 增加清单/版本/字段校验；反向验证 10 → **13** 个变异，全部变红。
+- `package.json`：`files[]` 与 `exports` 收录 `dsh-plugin.json`。
 ## 0.3.1 — 2026-10-22（徽标收口 + 反向验证）
 
 - **状态徽标做成真 chip**：宿主的 `composerStack` 是 `flex-direction:column`（默认

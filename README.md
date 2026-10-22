@@ -148,7 +148,7 @@ scripts/verify.sh             # 全部
 反向验证（证明测试有牙）：
 
 ```bash
-npm run verify:reverse              # 10 处变异，任一未变红即失败
+npm run verify:reverse              # 13 处变异，任一未变红即失败
 REVERSE=1 bash scripts/verify.sh    # 常规门禁 + 反向验证一起跑
 ```
 
@@ -158,6 +158,14 @@ REVERSE=1 bash scripts/verify.sh    # 常规门禁 + 反向验证一起跑
 L2/L2b/L4 需要 Linux X 栈（Xvfb、xdotool、imagemagick、xclip），在发行版内跑。
 L5 需要本机装有 DSH（找不到时自动 SKIP，不报错）。
 
+## 插件清单（dsh-plugin.json）
+
+`dsh-plugin.json`（`manifestVersion: "0.15"`）声明 `facets.host` 入口，并带一个
+`x-dsh-tui` 的 `SettingsSection`（8 个字段，与本插件配置一一对应）。它服务 **TUI / 插件市场**：
+
+- Web GUI 的配置表单**不走它**，走 `plugins.item` 插槽 + `configForms`（已真机验证）。
+- 故意不写 `compat.hosts`：样本里写 `["dsh-tui"]` 等于宣称只支持 TUI，可能影响 Web 挂载。
+- 改配置项要同时改 `lib/index.js` 的 `Config` 与清单里的 fields —— 漂移会被 L3 契约打红。
 ## 已知边界
 
 - **read_all_text / wait_text 的读取范围**：它们靠 ctrl+a / ctrl+c 取文本。若光标停在输入框里，取到的是**该输入框的内容**而不是整页；需要读页面时先点一下空白处。
