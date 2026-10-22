@@ -141,3 +141,20 @@ dsh plugin --profile lab add /opt/wslcu-dist/dsh-computer-use-wsl-0.1.7.tgz
 | 脚本门禁 | `bash scripts/verify.sh` → `L0 unit / L1 mcp handshake / L2 backend e2e / L2b viewer state / L4 host mode stub / L5 bundle patch / L6 client module / L7 shared control` **all layers passed** |
 
 结论：代码在冷启动环境下可复现，接管闸门对"变更类工具"的拦截是真的（不是界面文案）。
+## 0.2.8 — 真机核验（2026-10-22）
+
+宿主：DSH `0.2.0-rc.2`，`dsh web --host 127.0.0.1 --port 3082`，`DSH_HOME=~/.dsh-lab`，
+插件装入 `profiles/web`（`dsh plugin --profile web add dsh-computer-use-wsl-0.2.8.tgz`）。
+
+| 检查项 | 结果 |
+|---|---|
+| 条目激活（无 cordis 警告） | 通过：启动输出无 `did not activate`，出现 `[wslcu] ready transport=wsl display=:99` |
+| 配置热中继 | 通过：`[wslcu] settings reloaded from …\wslcu\settings.json` |
+| `GET /api/wslcu/status`（带 token 会话） | `200 {"state":"off","label":"未启动","idleReleaseMin":30,…}` |
+| 未认证请求（无 token） | `401`（信任围栏生效） |
+| 插件页配置表单 | 通过：7 项全部渲染（`docs/evidence/01-plugin-page-form.png`） |
+| 对话框状态徽标 | 通过：渲染「未启动」（`docs/evidence/02-chat-dock-badge.png`） |
+| 门禁 | `scripts/verify.sh` 八层全 PASS；单测 22/22 |
+
+反例留痕（改动前，均为真机实测）：装错 profile → `apply` 不执行（settings.json 不生成）；
+路由挂 `/wslcu/status` → 404；`apply` 返回 Fiber → `TypeError: Invalid effect` 未激活。

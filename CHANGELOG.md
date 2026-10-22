@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.2.8 — 2026-10-22（真机修正）
+
+首次在真实宿主里跑通（DSH 0.2.0-rc.2，`dsh web`，独立 `DSH_HOME=~/.dsh-lab`），
+修掉五个只有真机才暴露的错：
+
+1. **装错 profile**：`dsh web` 组合的是 `web` profile（`profiles/web/`），不是
+   `--profile lab`。装进 lab profile 时该行在 `--dump-config` 里看得见，但运行中的
+   宿主根本不挂载，`apply` 从不执行。判据：`%LOCALAPPDATA%\wslcu\settings.json`
+   是否被生成。
+2. **路由必须挂在 `/api/` 下**：注册 `/wslcu/status` 时 `register()` 照样返回
+   disposer（看着像成功），但请求永远命不中处理器（404）；改成
+   `/api/wslcu/status` 后立刻 200。
+3. **`apply` 不能有返回值**：`async apply` 末尾 `return connection`（Fiber 对象）
+   → cordis 把插件体的返回值当 effect 收集 → `TypeError: Invalid effect`，条目
+   「未激活」。返回 `undefined` 即好。
+4. **注册要两段式**：`ctx.inject(['connection','webServer'], c => …)` 里用
+   `c.get('webServer')`（裸 `ctx.get()` 取不到），并在 `c.effect()` 内注册；请求
+   先过 `connection.requestRejection()` 信任围栏（未认证 401，浏览器同源 200）。
+5. **清单形状**：`dsh.engines.dsh` 是版本范围；`dsh.compatibility.dshReleases`
+   是 `{版本: "compatible"}` 映射，不是数组。
+
+真机证据（截图见 `docs/evidence/`）：
+
+- 插件页 7 个配置项全部渲染（内存 4 / 核心 2 / swap 2 / disabled / 两个目录 / 闲置 30）
+- 对话框上方状态徽标渲染「未启动」（WSL 当时停机）
+- `GET /api/wslcu/status` → `200 {"state":"off","label":"未启动",…,"idleReleaseMin":30}`
 ## 0.2.0 — 2026-10-22
 
 首次把「配置面」放进插件自己身上，而不是全局设置页。
