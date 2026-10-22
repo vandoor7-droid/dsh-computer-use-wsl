@@ -123,3 +123,21 @@ dsh plugin --profile lab add /opt/wslcu-dist/dsh-computer-use-wsl-0.1.7.tgz
 
     正向：干净仓库        → pack-check ok
     负向：故意写坏语法    → pack-check failed: - syntax error in mcp/text-match.mjs:50
+
+## 2026-10-22 · v0.1.10 回归复测（同代码，换机器状态）
+
+代码停在 `a0fca64`（仅文档改动），在新一次 WSL 冷启动后把全部测试重跑一遍，确认没有环境残留依赖。
+
+| 项 | 值 |
+|---|---|
+| 环境 | WSL UbuntuLab，2 核 / 3.8 GiB（`.wslconfig` 削减后） |
+| 显示 | 测试统一用 `:98`，与实验桌面 `:99` 隔离，互不干扰 |
+| 单元测试 | `unit.test.mjs` → **12 通过 / 0 失败** |
+| viewer 状态 | `viewer-state.mjs` → **8/8**（SSE 推送 `agent->agent`） |
+| 控制面共享 | `control-shared.mjs` → **all checks passed**（含 stale takeover 释放、`startHeldByUser` 启动即持锁） |
+| MCP 握手 | `mcp-handshake.mjs` → **L1 OK**（19 个工具，`health/windows/takeover status` 均可用） |
+| 端到端 | `e2e.mjs` → **15/15**：viewer 与 websockify 端口不共享、xterm 启动、PNG 快照、点击聚焦、ASCII 打字（xtest）、**CJK 打字（剪贴板）**、接管时全部变更类工具被拒、接管结束恢复、`desktop_down` 只停自己启动的显示 |
+| 打包门禁 | `pack-check.mjs` → `pack-check ok` |
+| 脚本门禁 | `bash scripts/verify.sh` → `L0 unit / L1 mcp handshake / L2 backend e2e / L2b viewer state / L4 host mode stub / L5 bundle patch / L6 client module / L7 shared control` **all layers passed** |
+
+结论：代码在冷启动环境下可复现，接管闸门对"变更类工具"的拦截是真的（不是界面文案）。
