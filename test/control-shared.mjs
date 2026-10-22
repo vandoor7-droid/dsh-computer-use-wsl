@@ -104,9 +104,16 @@ try {
   await step('badge falls back to idle when the driving hold expires', async () => {
     // The shared record outlives the action; the viewer must not stay on
     // 「DSH 操作中」 once holdMs has passed (holdMs is 800ms in this test).
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-    const { value } = await other.callTool('control_state', {});
-    assert.equal(value.holder, 'idle', `badge stuck on agent: ${JSON.stringify(value)}`);
+    // The server expires holders on a 500ms tick (800ms hold + tick can land
+    // past a fixed 1200ms sleep, which flaked the batch gate). Poll instead.
+    const deadline = Date.now() + 5000;
+    let value;
+    for (;;) {
+      ({ value } = await other.callTool('control_state', {}));
+      if (value.holder === 'idle') break;
+      assert.ok(Date.now() < deadline, `badge stuck on agent: ${JSON.stringify(value)}`);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
     return 'back to idle';
   });
 
