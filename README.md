@@ -160,6 +160,27 @@ L5 需要本机装有 DSH（找不到时自动 SKIP，不报错）。
 - 没有窗口管理器也能工作（点击/输入仍然可用），但部分应用在无 WM 下行为怪异；`desktop_up` 有 openbox 就会起。
 - 纯 Linux 宿主不需要 `wsl.exe`：`transport` 会自动判为 `local`。
 
+## 什么时候该用 CDP 兜底
+
+插件的工具覆盖"看画面、点、打字、读文本、接管"，但**不是所有 Web 交互都能靠坐标和键盘完成**。
+下面的场景在实测里反复出现，直接走 Chrome DevTools Protocol 更快也更稳（前提是 Chrome 带
+`--remote-debugging-port=9222 --remote-allow-origins='*'` 启动）：
+
+| 场景 | 坐标/键盘方案 | CDP 方案 |
+|---|---|---|
+| 给 `<input type=file>` 选文件 | 原生 GTK 对话框在 Xvfb 下常点不中 | `DOM.setFileInputFiles`（`/opt/cdp.mjs setfile 'input[type=file]' /tmp/x.docx`） |
+| 表单里按 Enter 提交 | 合成 `KeyboardEvent` 常不触发框架（Angular 等）的按键绑定 | `Input.dispatchKeyEvent`（真实按键，`/opt/key.mjs`） |
+| 按钮 `element.click()` 无反应 | — | `Input.dispatchMouseEvent` 真实坐标点击（`/opt/mouse.mjs`），坐标取自 `getBoundingClientRect()` 中心 |
+| 读出表单已填的值 | `read_all_text` 会取到光标所在输入框 | `Runtime.evaluate` 直接读 `.value` |
+| 找回被关掉的页面 URL | — | `Page.getNavigationHistory`（`/opt/hist.mjs`）或读 Chrome 的 History SQLite |
+
+**边界要认清**：CDP 只在"浏览器内"有效，且需要调试端口，等于把浏览器完全打开；它不能替代插件的
+**接管闸门、跨实例状态共享、虚拟桌面的长时间托管**。实践建议是：**用插件保持会话与接管，用 CDP 做表单级精确操作**。
+
+> 实测记录：2026-10-22 跑华为云 KooLabs 20007984（建知识库 → 上传 docx → 挂载 → 调试 → 提交版本
+> → 部署 → 发布网页渠道）时，页面是 Angular 写的，Enter 与 `element.click()` 大面积失效，
+> 全程靠 `fill/click/setfile/mouse/key` 这几个 CDP 命令完成；截图与文本证据仍由插件链路产出。
+
 ## 许可
 
 MIT。第三方组件（x11vnc / noVNC / websockify / xdotool / ImageMagick / xclip）不随本包分发，见 [THIRD_PARTY.md](./THIRD_PARTY.md)。
