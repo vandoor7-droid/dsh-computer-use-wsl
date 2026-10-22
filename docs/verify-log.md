@@ -250,3 +250,13 @@ t3  transform=scale(1.007)  dot-shadow=rgba(77,139,254,0.165) 0 0 0 3.04px chip-
 
 - 反向验证 **13/13** 全红（新增：清单版本漂移、删对齐 padding、删 reduced-motion 分支）。
 - `dsh-plugin.json` 由 `pack-check` 与 L3 契约双重校验（version 跟随 package.json、字段 ⊆ Config 键）。
+### 窄窗复测（复现你截图那种宽度）
+
+用 CDP `Emulation.setDeviceMetricsOverride` 把视口改到 851×473（实际 `innerWidth` 827）：
+
+```
+innerWidth=827  badge.left=82  card.left=82  gap=0   （卡片宽 712）
+```
+
+宽窗 1256：`badge.left=409 card.left=409 gap=0`。两种宽度都对齐，截图见
+`docs/evidence/07-badge-narrow.png`。
