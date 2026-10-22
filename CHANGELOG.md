@@ -26,6 +26,10 @@
 - **门禁**：L3 契约 6 → 10 条（清单一致性、字段覆盖、对齐 token、reduced-motion）；
   `pack-check` 增加清单/版本/字段校验；反向验证 10 → **13** 个变异，全部变红。
 - `package.json`：`files[]` 与 `exports` 收录 `dsh-plugin.json`。
+- **修掉 L7 的偶发红**：控制态持有者在服务端 500ms 一跳的 ticker 上过期，测试原本固定只等
+  1200ms（800ms 持有 + 一拍 tick 可能刚好超过），批量跑时会偶发「badge stuck on agent」。
+  改成轮询到 5s 截止时间，连续两轮门禁全绿。
+
 ## 0.3.1 — 2026-10-22（徽标收口 + 反向验证）
 
 - **状态徽标做成真 chip**：宿主的 `composerStack` 是 `flex-direction:column`（默认
