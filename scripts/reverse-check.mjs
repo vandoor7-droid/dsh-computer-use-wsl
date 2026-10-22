@@ -112,8 +112,10 @@ const MUTATIONS = [
   {
     id: 'manifest-version-drift',
     file: 'dsh-plugin.json',
-    find: '"version": "0.3.2",',
-    replace: '"version": "0.0.0",',
+    // Version-agnostic on purpose: pinning the literal version here breaks the
+    // rehearsal on every release.
+    find: '"version": "',
+    replace: '"version": "0.0.0-',
     layer: 'L3',
     expect: 'the plugin manifest matches',
   },
