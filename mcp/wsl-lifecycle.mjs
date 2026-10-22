@@ -33,6 +33,12 @@ export const BADGE = Object.freeze({
 
 /* ------------------------------------------------------------------ paths */
 
+/** Exact host route the chat-dock badge polls. Lives under /api/: the
+ * host only dispatches /api/* to the route registry (anything else falls
+ * through to the static handler and 404s).
+ */
+export const STATUS_PATH = '/api/wslcu/status';
+
 export function wslconfigPath(home = os.homedir()) {
   return path.join(home, '.wslconfig');
 }
@@ -42,8 +48,10 @@ export function wslcuDir(env = process.env) {
   return path.join(base, 'wslcu');
 }
 
-export const settingsFilePath = (env = process.env) => path.join(wslcuDir(env), 'settings.json');
-export const statusFilePath = (env = process.env) => path.join(wslcuDir(env), 'status.json');
+export const settingsFilePath = (env = process.env) =>
+  env.WSLCU_SETTINGS_FILE || path.join(wslcuDir(env), 'settings.json');
+export const statusFilePath = (env = process.env) =>
+  env.WSLCU_STATUS_FILE || path.join(wslcuDir(env), 'status.json');
 
 /** Where Windows-side artifacts (shots/exports/backups) land. */
 export function outputDir(settings = {}, env = process.env) {

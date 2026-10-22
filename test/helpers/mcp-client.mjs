@@ -6,13 +6,25 @@
  */
 
 import { spawn } from 'node:child_process';
+import { mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const SERVER = fileURLToPath(new URL('../../mcp/server.mjs', import.meta.url));
 
 export function createClient(settings = {}) {
+  // Keep the run hermetic: the relay files must never point at the machine's
+  // live %LOCALAPPDATA%/wslcu, or a running host would override these settings.
+  const sandbox = settings.stateDir || join(tmpdir(), 'wslcu-client-sandbox');
+  mkdirSync(sandbox, { recursive: true });
   const child = spawn(process.execPath, [SERVER], {
-    env: { ...process.env, WSLCU_SETTINGS_JSON: JSON.stringify(settings) },
+    env: {
+      ...process.env,
+      WSLCU_SETTINGS_JSON: JSON.stringify(settings),
+      WSLCU_SETTINGS_FILE: join(sandbox, 'settings.json'),
+      WSLCU_STATUS_FILE: join(sandbox, 'status.json'),
+    },
     stdio: ['pipe', 'pipe', 'pipe'],
   });
 

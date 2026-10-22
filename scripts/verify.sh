@@ -32,10 +32,15 @@ run "L0 unit" "$NODE" --test test/unit.test.mjs
 run "L1 mcp handshake" "$NODE" test/mcp-handshake.mjs
 run "L2 backend e2e" "$NODE" test/e2e.mjs
 run "L2b viewer state" "$NODE" test/viewer-state.mjs
+run "L3 contracts" "$NODE" --test test/contracts.mjs
 run "L4 host mode stub" "$NODE" test/transport-stub.mjs
 run "L5 bundle patch" "$NODE" test/bundle-patch.mjs
 run "L6 client module" "$NODE" test/client-module.mjs
 run "L7 shared control" "$NODE" test/control-shared.mjs
+
+if [ "${REVERSE:-0}" = "1" ]; then
+  run "L9 reverse check" "$NODE" scripts/reverse-check.mjs --allow-dirty
+fi
 
 echo
 printf '%-6s %-22s %s\n' "RESULT" "LAYER" "TIME"
