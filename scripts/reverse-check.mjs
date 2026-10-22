@@ -14,9 +14,10 @@
  */
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const repoRoot = path.resolve(new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
+const repoRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const rehearsalDir = path.join(repoRoot, '.rehearsal');
 const allowDirty = process.argv.includes('--allow-dirty');
 
