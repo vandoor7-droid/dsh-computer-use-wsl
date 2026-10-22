@@ -68,25 +68,11 @@ for (const required of [
 
 // --- plugin manifest -------------------------------------------------------
 try {
-  const manifest = JSON.parse(await readFile(path.join(ROOT, 'dsh-plugin.json'), 'utf8'));
-  const pkg = JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8'));
-  if (manifest.version !== pkg.version) {
-    problems.push(`dsh-plugin.json version ${manifest.version} != package.json ${pkg.version}`);
-  }
-  if (!pkg.files.includes('dsh-plugin.json')) {
-    problems.push('dsh-plugin.json is not listed in package.json files[]');
-  }
-  if (manifest.facets?.host?.entry !== 'lib/index.js') {
-    problems.push('dsh-plugin.json host entry is not lib/index.js');
-  }
-  const section = (manifest.contributes?.['x-dsh-tui'] ?? []).find((entry) => entry.kind === 'SettingsSection');
-  if (!section) {
-    problems.push('dsh-plugin.json has no x-dsh-tui SettingsSection');
-  } else if (!Array.isArray(section.spec?.fields) || section.spec.fields.length < 8) {
-    problems.push('dsh-plugin.json SettingsSection has fewer than 8 fields');
-  }
+  const { stdout } = await run(process.execPath, [path.join(ROOT, 'scripts', 'check-manifest.mjs')]);
+  if (!/manifest ok/.test(stdout)) problems.push('check-manifest did not report success');
 } catch (error) {
-  problems.push(`dsh-plugin.json: ${error.message}`);
+  const detail = String(error.stdout || error.message || '').split('\n').filter(Boolean).slice(-4).join(' / ');
+  problems.push(`check-manifest failed: ${detail}`);
 }
 if (problems.length) {
   console.error('pack-check failed:');

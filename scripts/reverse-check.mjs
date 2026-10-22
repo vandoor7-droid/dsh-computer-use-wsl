@@ -133,6 +133,30 @@ const MUTATIONS = [
     layer: 'L3',
     expect: 'honours reduced motion',
   },
+  {
+    id: 'manifest-unknown-property',
+    file: 'dsh-plugin.json',
+    find: '"license": "MIT",',
+    replace: '"license": "MIT",\n  "licenseX": true,',
+    layer: 'L3',
+    expect: 'validates against the vendored schema',
+  },
+  {
+    id: 'manifest-version-const',
+    file: 'dsh-plugin.json',
+    find: '"manifestVersion": "0.15",',
+    replace: '"manifestVersion": "0.16",',
+    layer: 'L3',
+    expect: 'validates against the vendored schema',
+  },
+  {
+    id: 'schema-digest-tampered',
+    file: 'schemas/dsh-plugin-0.15.schema.json',
+    find: '"title": "DSH Plugin Manifest Community Draft v0.15",',
+    replace: '"title": "DSH Plugin Manifest Community Draft v0.15 ",',
+    layer: 'L3',
+    expect: 'matches its provenance digest',
+  },
 ];
 
 function sh(args, timeout = 240000) {

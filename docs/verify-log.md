@@ -260,3 +260,37 @@ innerWidth=827  badge.left=82  card.left=82  gap=0   （卡片宽 712）
 
 宽窗 1256：`badge.left=409 card.left=409 gap=0`。两种宽度都对齐，截图见
 `docs/evidence/07-badge-narrow.png`。
+## 0.3.3 — 官方 schema 核对（2026-10-22）
+
+上游：`T-Auto/dsh-std` `packages/manifest/schema/dsh-plugin-0.15.schema.json`
+标题 *DSH Plugin Manifest Community Draft v0.15*，4830 字节，
+`sha256 49c9272bbf5bfce29eb69d2477211ced945ec91251294eda1cb5e3cd5c0d3a02`；
+钉住 commit `8a15541…` 与 `main` **逐字节一致**。
+
+真 `ajv`（2020-12，`strict:false, validateFormats:false`）对当前清单：**`valid = true`**。
+
+子集校验器 vs 真 ajv 的交叉对照（9 个用例）：
+
+| 用例 | ajv | 子集校验器 | 一致 |
+|---|---|---|---|
+| 原样 | valid | valid | ✅ |
+| 根级多余属性 `licenseX` | invalid | invalid | ✅ |
+| `manifestVersion: "0.16"` | invalid | invalid | ✅ |
+| `id` 含大写 | invalid | invalid | ✅ |
+| `facets.host.entry: "../lib/index.js"` | invalid | invalid | ✅ |
+| command 缺 `title` | invalid | invalid | ✅ |
+| `source` 缺 `repository` | invalid | invalid | ✅ |
+| `contributes["x-extra"] = {}`（非数组） | invalid | invalid | ✅ |
+| permission 缺 `scope` | invalid | invalid | ✅ |
+
+`mismatches = 0`。
+
+`node scripts/check-manifest.mjs --remote` 输出：
+
+```
+schema   : DSH Plugin Manifest Community Draft v0.15
+schema   : schemas/dsh-plugin-0.15.schema.json sha256=49c9272bbf5bfce29eb69d2477211ced945ec91251294eda1cb5e3cd5c0d3a02
+manifest : dsh-plugin.json dsh-computer-use-wsl@0.3.3
+upstream : in sync (sha256=49c9272b…)
+manifest ok
+```

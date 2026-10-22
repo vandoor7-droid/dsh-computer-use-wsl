@@ -1,6 +1,6 @@
 {
     "name":  "dsh-computer-use-wsl",
-    "version":  "0.3.2",
+    "version":  "0.3.3",
     "description":  "WSL / headless-Linux computer use for DeepSeek Harness: an MCP stdio bridge drives an Xvfb + x11vnc + noVNC desktop, exposing snapshot/click/type/key tools, plus a sidebar viewer shell that shows 「DSH 操作中」 and lets the human take over at any time.",
     "type":  "module",
     "main":  "./lib/index.js",
@@ -16,6 +16,7 @@
                   "web/",
                   "scripts/",
                   "cordis.patch.yml",
+        "schemas/",
                   "README.md",
                   "README.en.md",
                   "CHANGELOG.md",
@@ -45,6 +46,7 @@
            ],
     "scripts":  {
     "verify:reverse":  "node scripts/reverse-check.mjs",
+    "check:manifest":  "node scripts/check-manifest.mjs",
                     "self-test":  "node mcp/server.mjs --self-test",
                     "test":  "node --test test/unit.test.mjs",
                     "l1":  "node test/mcp-handshake.mjs",

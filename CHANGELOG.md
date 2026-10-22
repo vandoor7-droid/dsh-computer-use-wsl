@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.3.3 — 2026-10-22（用官方 schema 核对清单，并固化成离线门禁）
+
+- **核对完成**：官方 schema `T-Auto/dsh-std` → `packages/manifest/schema/dsh-plugin-0.15.schema.json`
+  （标题 *DSH Plugin Manifest Community Draft v0.15*，`sha256 49c9272b…`，钉住的 commit 与 `main`
+  逐字节一致）。用真实 `ajv`（draft 2020-12）校验当前 `dsh-plugin.json`：**`valid = true`**。
+- **固化进仓库**：`schemas/dsh-plugin-0.15.schema.json`（逐字节一致）+ `schemas/README.md`
+  （来源、commit、日期、`sha256`、重抓方法）。`npm run check:manifest` 离线校验；
+  `npm run check:manifest -- --remote` 额外与上游 `main` 比对，防止 schema 悄悄漂移。
+- **不加依赖的校验器**：`scripts/json-schema.mjs` 只实现该 schema 用到的关键字
+  （type/required/properties/patternProperties/additionalProperties/items/min·maxItems/
+  min·maxLength/pattern/const/enum/oneOf/$ref/$defs），**遇到未实现的关键字直接抛错**
+  ——宁可炸也不做橡皮图章。与真 `ajv` 做了 9 个用例的交叉对照，**9/9 结论一致**。
+- **门禁**：`pack-check` 改为调用 `check-manifest`；L3 契约 10 → 12 条（schema 校验 + vendored
+  文件 `sha256` 与记录值一致）；反向验证 13 → **16** 个变异（根级多余属性、`manifestVersion`
+  改 0.16、篡改 vendored schema 让摘要对不上）。
+- **边界（重要）**：上游**没有** `x-dsh-tui` 的正式 schema，`contributes` 只约束
+  `commands`/`panels`，`^x-` 仅要求「是数组」。所以 `SettingsSection` 的字段形状仍是社区约定
+  （照 `dsh-ops`/`dsh-browser-cdp`），schema 通过**不等于** TUI 端一定渲染它。
+- `format: uri` 在子集校验器里是宽松处理（与交叉核验时的 `validateFormats: false` 一致）。
 ## 0.3.2 — 2026-10-22（对齐修正 + 呼吸动画 + 插件清单）
 
 **版本基准纠正**：桌面 App 的实际版本是 **0.2.1-rc.2**（`resources/runtime/runtime.json` 的

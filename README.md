@@ -166,6 +166,10 @@ L5 需要本机装有 DSH（找不到时自动 SKIP，不报错）。
 - Web GUI 的配置表单**不走它**，走 `plugins.item` 插槽 + `configForms`（已真机验证）。
 - 故意不写 `compat.hosts`：样本里写 `["dsh-tui"]` 等于宣称只支持 TUI，可能影响 Web 挂载。
 - 改配置项要同时改 `lib/index.js` 的 `Config` 与清单里的 fields —— 漂移会被 L3 契约打红。
+- 清单用**官方 0.15 schema** 校验：`npm run check:manifest`（离线，schema 已 vendor 到
+  `schemas/`）；加 `-- --remote` 会顺带与上游 `main` 比对摘要，schema 漂移一眼可见。
+- 上游**没有** `x-dsh-tui` 的正式 schema，`SettingsSection` 字段形状是社区约定；
+  schema 通过不代表 TUI 端一定认这些字段。
 ## 已知边界
 
 - **read_all_text / wait_text 的读取范围**：它们靠 ctrl+a / ctrl+c 取文本。若光标停在输入框里，取到的是**该输入框的内容**而不是整页；需要读页面时先点一下空白处。

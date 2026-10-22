@@ -9,6 +9,10 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
+import { createHash } from 'node:crypto';
+import { validate } from '../scripts/json-schema.mjs';
+
+const EXPECTED_SCHEMA_SHA256 = '49c9272bbf5bfce29eb69d2477211ced945ec91251294eda1cb5e3cd5c0d3a02';
 
 import { STATUS_PATH } from '../mcp/wsl-lifecycle.mjs';
 
@@ -135,4 +139,17 @@ test('contract: the badge aligns with the composer card', () => {
 test('contract: the badge honours reduced motion', () => {
   const client = read('../lib/client.js');
   assert.ok(client.includes('prefers-reduced-motion'), 'reduced-motion guard');
+});
+test('contract: the manifest validates against the vendored schema', () => {
+  const schema = readJson('../schemas/dsh-plugin-0.15.schema.json');
+  const manifest = readJson('../dsh-plugin.json');
+  const result = validate(schema, manifest);
+  assert.ok(result.ok, `manifest invalid: ${result.errors.join(' | ')}`);
+});
+
+test('contract: the vendored schema matches its provenance digest', () => {
+  const bytes = fs.readFileSync(new URL('../schemas/dsh-plugin-0.15.schema.json', import.meta.url));
+  const digest = createHash('sha256').update(bytes).digest('hex');
+  assert.equal(digest, EXPECTED_SCHEMA_SHA256, 'the vendored schema changed; re-vendor it and update schemas/README.md');
+  assert.ok(read('../schemas/README.md').includes(EXPECTED_SCHEMA_SHA256), 'schemas/README.md lost the recorded digest');
 });
