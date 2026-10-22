@@ -111,7 +111,7 @@ desktop_down                # 只停自己起的进程
 | 键 | 默认 | 说明 |
 |---|---|---|
 | `transport` | `''`（自动） | `wsl` = Windows 侧驱动发行版；`local` = 在发行版内直接跑 |
-| `distro` / `user` | `''` | 空 = WSL 默认发行版 / 默认用户 |
+| `distro` / `user` | `UbuntuLab` / `''` | 空 = WSL 默认发行版 / 默认用户 |
 | `display` | `:99` | X display |
 | `resolution` | `1280x960` | 4:3，适配侧边栏窄栏 |
 | `vncPort` / `webPort` / `viewerPort` | `5900` / `6080` / `6081` | 被占会自动向上探测 |
@@ -144,6 +144,16 @@ node test/bundle-patch.mjs    # L5 真实组合：用 DSH 官方 entryListSchema
 node test/client-module.mjs   # L6 客户端模块契约（设置卡注册）
 scripts/verify.sh             # 全部
 ```
+
+反向验证（证明测试有牙）：
+
+```bash
+npm run verify:reverse              # 10 处变异，任一未变红即失败
+REVERSE=1 bash scripts/verify.sh    # 常规门禁 + 反向验证一起跑
+```
+
+中继文件位置可覆盖：`WSLCU_SETTINGS_FILE` / `WSLCU_STATUS_FILE`（测试用它做隔离，
+避免读到宿主机器上的全局设置）。
 
 L2/L2b/L4 需要 Linux X 栈（Xvfb、xdotool、imagemagick、xclip），在发行版内跑。
 L5 需要本机装有 DSH（找不到时自动 SKIP，不报错）。

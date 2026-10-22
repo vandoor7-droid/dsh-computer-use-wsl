@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.1 — 2026-10-22（徽标收口 + 反向验证）
+
+- **状态徽标做成真 chip**：宿主的 `composerStack` 是 `flex-direction:column`（默认
+  `stretch`），把按钮拉成整行 744×24px。加 `alignSelf:flex-start` + `width:fit-content`
+  后实测 **70×26px**；同时按状态色淡染背景/边框、圆点加光环（DSH 操作中 / 已人工接管）、
+  空闲态显示「约 N 分钟后释放」。证据：`docs/evidence/03-badge-chip.png`。
+- **新增 L3 contracts 层**（`test/contracts.mjs`，6 条）：守 `/api` 路由前缀、`exact`
+  路由、`apply` 不得返回值、清单 `engines.dsh` + `dshReleases` 映射形状、bundle patch
+  存在、徽标取数与槽位名。这些坑都是真机上踩过、而原测试完全看不见的。
+- **新增反向验证** `scripts/reverse-check.mjs`（`npm run verify:reverse`）：把 10 处
+  关键实现逐个改坏，要求对应测试层必须变红，跑完自动还原并校验工作区干净。首次运行
+  就抓出两个盲点（槽位 `inject` 名无人断言、工具清单只查数量下限），已补齐，现
+  **10/10 全部变红**。
+- **中继文件可注入**：`WSLCU_SETTINGS_FILE` / `WSLCU_STATUS_FILE`；测试助手把两个
+  路径指到自己的沙盒，修掉 L7 被宿主机全局 `settings.json`（`agentStateHoldMs:3000`）
+  污染导致的失败。
 ## 0.3.0 — 2026-10-22（闲置释放真机验证）
 
 - 新增 `test/idle-release-live.mjs`：手工驱动 MCP 服务器，`desktop_up` 起桌面后保持

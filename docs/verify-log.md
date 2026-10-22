@@ -180,3 +180,35 @@ PASS: the idle reaper terminated the managed distro
    为 `UbuntuLab`，且**空串只表示「未配置」**：发布时省略、合并时忽略，不再清空已有值。
 2. 回收器带 `live.ready` 前置条件（只回收自己启动的桌面），手工起的发行版不会被误杀 ——
    这是设计，不是缺陷，故用上面的脚本方式验证。
+## 0.3.1 — 徽标与反向验证（2026-10-22）
+
+徽标（真机，ego-browser 取计算样式）：
+
+| 项 | 改前 | 改后 |
+|---|---|---|
+| 宽 | 744px（被 dock 拉伸成整行） | **70px** |
+| 高 | 24px | 26px |
+| 背景 | `rgba(0, 0, 0, 0)` | `rgba(155, 89, 182, 0.14)`（按状态色） |
+| 边框 | 主题灰 | `1px solid rgba(155, 89, 182, 0.38)` |
+| alignSelf | auto | flex-start |
+
+反向验证输出（`npm run verify:reverse`）：
+
+```
+RESULT  LAYER     MUTATION                        EXPECTED TEST
+PASS    L0        idle-release-never-fires        idle release
+PASS    L0        vm-knobs-ignore-settings        settings map onto VM knobs
+PASS    L0        badge-agent-looks-idle          five states
+PASS    L0        clamp-dropped                   clamp instead of exploding
+PASS    L0        status-forgets-release-marker   payload merges viewer state
+PASS    L3        route-outside-api               status route lives under
+PASS    L3        apply-returns-the-fiber         apply must not return
+PASS    L3        manifest-releases-as-array      manifest keeps the shapes
+PASS    L6        badge-slot-renamed              chat-dock status badge
+PASS    L1        tool-renamed                    wsl_release
+10/10 mutations turned the suite red
+```
+
+首轮是 8/10，暴露并修掉两个盲点：`client-module` 只断言了 `register` 的 meta 名、
+没断言 `inject` 的槽位名；`mcp-handshake` 的 `EXPECTED` 漏了 `wsl_apply_perf` /
+`wsl_release` / `wsl_move_distro` 三个新工具。补齐后 10/10。
