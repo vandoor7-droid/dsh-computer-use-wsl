@@ -88,8 +88,11 @@ function refreshSettings() {
     const stat = fs.statSync(file);
     if (stat.mtimeMs === settingsMtime) return false;
     settingsMtime = stat.mtimeMs;
-    const next = normalizeSettings(JSON.parse(fs.readFileSync(file, 'utf8')));
-    Object.assign(settings, next); // in-place: desktop/capture/input share this object
+      const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+      const next = normalizeSettings(raw);
+      // An empty string means "not configured": never let it clear a live value.
+      for (const key of Object.keys(next)) if (next[key] === '') delete next[key];
+      Object.assign(settings, next); // in-place: desktop/capture/input share this object
     control.holdMs = Math.max(200, Number(settings.agentStateHoldMs) || 3000);
     log(`settings reloaded from ${file}`);
     return true;

@@ -158,3 +158,25 @@ dsh plugin --profile lab add /opt/wslcu-dist/dsh-computer-use-wsl-0.1.7.tgz
 
 反例留痕（改动前，均为真机实测）：装错 profile → `apply` 不执行（settings.json 不生成）；
 路由挂 `/wslcu/status` → 404；`apply` 返回 Fiber → `TypeError: Invalid effect` 未激活。
+## 0.3.0 — 闲置释放真机核验（2026-10-22）
+
+方式：不经宿主，直接驱动 MCP 服务器（`test/idle-release-live.mjs`）——
+一次 `desktop_up` 把桌面拉起来，之后保持沉默，由回收器自己动手。
+
+```
+[server] [wslcu] ready transport=wsl display=:99
+screenshot: ok
+distro after start: Running
+[server] [wslcu] idle release: terminated UbuntuLab after 1min without activity
+releasedAt=2026-10-22T11:03:23.919Z distro=UbuntuLab
+distro after idle: Stopped
+PASS: the idle reaper terminated the managed distro
+```
+
+同时修掉两个会让回收静默失效的缺陷：
+
+1. `distro` 默认值是空串，而桥接会把设置原样发布到 `settings.json`、后端再整体覆盖
+   进内存 —— 空串把发行版名冲掉，回收器等于在 `wsl --terminate ""` 上打空。现在默认
+   为 `UbuntuLab`，且**空串只表示「未配置」**：发布时省略、合并时忽略，不再清空已有值。
+2. 回收器带 `live.ready` 前置条件（只回收自己启动的桌面），手工起的发行版不会被误杀 ——
+   这是设计，不是缺陷，故用上面的脚本方式验证。

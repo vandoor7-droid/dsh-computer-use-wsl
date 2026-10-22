@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — 2026-10-22（闲置释放真机验证）
+
+- 新增 `test/idle-release-live.mjs`：手工驱动 MCP 服务器，`desktop_up` 起桌面后保持
+  沉默，断言回收器终止发行版并写下 `releasedAt`。实测输出
+  `idle release: terminated UbuntuLab after 1min without activity` + `Stopped`。
+- 修两个让回收静默失效的缺陷：`distro` 默认空串会把后端默认值冲掉（现默认
+  `UbuntuLab`）；发布/合并时空串被当成「未配置」而不是「清空」。
+- 回收器保留 `live.ready` 前置：只回收本插件启动的桌面，不误杀用户手工起的发行版。
 ## 0.2.8 — 2026-10-22（真机修正）
 
 首次在真实宿主里跑通（DSH 0.2.0-rc.2，`dsh web`，独立 `DSH_HOME=~/.dsh-lab`），
