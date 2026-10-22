@@ -55,7 +55,7 @@ check('apply tolerates a host without slots or sidebar', () => {
   assert.doesNotThrow(() => mod.apply(undefined));
 });
 
-check('apply registers the settings card once', () => {
+check('apply registers the chat-dock status badge', () => {
   const calls = [];
   const ctx = {
     slots: {
@@ -76,16 +76,53 @@ check('apply registers the settings card once', () => {
   };
   mod.apply(ctx);
 
-  const register = calls.find((call) => call[0] === 'register');
-  assert.ok(register, 'settings.section was never registered');
-  assert.equal(register[1], 'settings.section');
-  assert.equal(register[2], 'wsl-computer-use');
-  assert.equal(register[3], 17);
-  assert.equal(register[4], 'function');
+  const badge = calls.find((call) => call[0] === 'register' && call[1] === 'conversation.input.dock');
+  assert.ok(badge, 'the chat-dock badge was never registered');
+  assert.equal(badge[2], 'wsl-computer-status');
+  assert.equal(badge[4], 'function');
   assert.ok(
     calls.some((call) => call[0] === 'service' && call[1] === 'sidebarRight'),
     'sidebarRight was not requested',
   );
+});
+
+check('apply registers the plugin-page form when configForms is available', () => {
+  const calls = [];
+  const scope = {
+    subscribe: () => () => {},
+    getSnapshot: () => ({ status: 'ready', value: {}, writable: true, revision: 1 }),
+    load: () => {},
+    set: () => {},
+    mutate: () => true,
+  };
+  const ctx = {
+    slots: {
+      inject(name, register) {
+        register();
+      },
+      register(meta, component) {
+        calls.push(['register', meta.name, meta.id, meta.order, typeof component]);
+        return () => {};
+      },
+    },
+    inject(services, run) {
+      if (services.includes('configForms')) {
+        run({
+          configForms: { get: () => scope, describe: () => ({ acceptView() {}, load() {} }) },
+          connection: null,
+        });
+      }
+      return () => {};
+    },
+  };
+  mod.apply(ctx);
+
+  const form = calls.find((call) => call[0] === 'register' && call[1] === 'plugins.item');
+  assert.ok(form, 'the plugin-page settings form was never registered');
+  assert.equal(form[2], 'wsl-computer-use');
+  assert.equal(form[4], 'function');
+  // The badge must still be there: both surfaces live in the same module.
+  assert.ok(calls.some((call) => call[1] === 'conversation.input.dock'));
 });
 
 console.log(failures ? `\n${failures} failure(s)` : '\nall checks passed');

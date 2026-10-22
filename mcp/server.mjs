@@ -8,7 +8,7 @@
  */
 
 import { createInterface } from 'node:readline';
-import { readFileSync } from 'node:fs';
+import fs from 'node:fs';
 import { hostname } from 'node:os';
 import { normalizeSettings, parseResolution } from '../lib/settings.mjs';
 import { createTransport } from './transport.mjs';
@@ -20,10 +20,26 @@ import { ControlFile } from './control-store.mjs';
 import { textMatches, hasCondition } from './text-match.mjs';
 import { startViewerServer } from './viewer-server.mjs';
 import { sh } from './transport.mjs';
+import {
+  settingsFilePath,
+  readStatus,
+  writeStatus,
+  readWslconfig,
+  parseWslconfig,
+  applyWslconfig,
+  wslconfigUpdates,
+  shouldRelease,
+  terminateDistro,
+  shutdownWsl,
+  moveDistro,
+  listDistros,
+  distroRunning,
+  outputDir,
+} from './wsl-lifecycle.mjs';
 
 const VERSION = (() => {
   try {
-    return JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
+    return JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
   } catch {
     return '0.0.0';
   }
@@ -58,6 +74,99 @@ const control = new ControlState({
 // with `startHeldByUser` the agent begins in USER_IN_CONTROL and must wait for
 // 「交还给 DSH」 instead of driving straight away.
 if (settings.startHeldByUser) control.setUserActive(true);
+
+// ---------------------------------------------------------------------------
+// Live settings + idle release
+// ---------------------------------------------------------------------------
+// The bridge fixes our env at spawn time, so the host publishes settings edits
+// to a file; re-reading it by mtime is what makes a volatile change take effect
+// without restarting this process.
+let settingsMtime = 0;
+function refreshSettings() {
+  const file = settingsFilePath();
+  try {
+    const stat = fs.statSync(file);
+    if (stat.mtimeMs === settingsMtime) return false;
+    settingsMtime = stat.mtimeMs;
+    const next = normalizeSettings(JSON.parse(fs.readFileSync(file, 'utf8')));
+    Object.assign(settings, next); // in-place: desktop/capture/input share this object
+    control.holdMs = Math.max(200, Number(settings.agentStateHoldMs) || 3000);
+    log(`settings reloaded from ${file}`);
+    return true;
+  } catch {
+    return false; // no published file yet: the env snapshot stands
+  }
+}
+
+/** Last tool activity, the only clock the idle reaper trusts. */
+let lastActivityAt = Date.now();
+let releaseInFlight = false;
+let nextReapCheckAt = 0;
+
+function markActivity() {
+  lastActivityAt = Date.now();
+  const marker = readStatus();
+  // Fresh activity resurrects a released distro: drop the old marker.
+  writeStatus({
+    lastActivityAt,
+    distro: settings.distro || '',
+    ...(marker.releasedAt ? { releasedAt: null } : {}),
+  });
+}
+
+/**
+ * Terminate the managed distro after `idleReleaseMin` minutes without an
+ * mcp__wslcu__* call. 0 disables it. Only our own distro is touched, and the
+ * data stays on disk; the next tool call cold-starts it again.
+ */
+async function reapIfIdle() {
+  if (releaseInFlight) return;
+  const now = Date.now();
+  if (now < nextReapCheckAt) return;
+  nextReapCheckAt = now + 30000;
+  refreshSettings();
+  const minutes = Number(settings.idleReleaseMin);
+  if (!(minutes > 0)) return;
+  if (!live.ready) return; // nothing of ours is running
+  if (!shouldRelease(now, lastActivityAt, minutes)) return;
+
+  releaseInFlight = true;
+  try {
+    const result = await terminateDistro(settings.distro);
+    live.ready = false;
+    const releasedAt = new Date().toISOString();
+    writeStatus({ releasedAt, lastActivityAt, distro: settings.distro || '' });
+    log(
+      `idle release: terminated ${settings.distro || 'default distro'} after ${minutes}min without activity`
+        + (result.ok ? '' : ` (${result.stderr || 'terminate failed'})`),
+    );
+  } catch (error) {
+    log(`idle release failed: ${error?.message || error}`);
+  } finally {
+    releaseInFlight = false;
+  }
+}
+
+/** Facts the model (and the badge) need about the WSL side, in one object. */
+async function wslSummary() {
+  const { distros } = await listDistros().catch(() => ({ distros: [] }));
+  const name = settings.distro || '';
+  const hit = name ? distros.find((d) => d.name === name) : distros.find((d) => d.default) || distros[0];
+  const marker = readStatus();
+  const cfg = parseWslconfig(readWslconfig().text);
+  return {
+    distro: name || hit?.name || '',
+    state: hit?.state || 'unknown',
+    running: hit ? /^running$/i.test(hit.state) : null,
+    distros: distros.map((d) => ({ name: d.name, state: d.state, version: d.version })),
+    config: cfg.wsl2 || {},
+    idleReleaseMin: Number(settings.idleReleaseMin) || 0,
+    lastActivityAt: new Date(lastActivityAt).toISOString(),
+    releasedAt: marker.releasedAt || null,
+    outputDir: outputDir(settings),
+    distroDataDir: settings.distroDataDir || '',
+  };
+}
 
 /** Last known desktop facts, kept fresh for the viewer shell. */
 const live = {
@@ -109,7 +218,10 @@ async function ensureViewer() {
 let ticker = null;
 function startTicker() {
   if (ticker) return;
-  ticker = setInterval(() => control.tick(), 500);
+  ticker = setInterval(() => {
+    control.tick();
+    void reapIfIdle();
+  }, 500);
   ticker.unref?.();
 }
 
@@ -219,6 +331,7 @@ const tools = [
         viewerUrl: viewerInfo.url,
         state: control.get().state,
         missingTools: probe.TOOLS_MISSING || '',
+        wsl: await wslSummary(),
         hint: 'Open viewerUrl in the sidebar (or call sidebar_open with it) so the human can watch and take over.',
       };
     },
@@ -576,6 +689,102 @@ const tools = [
       };
     },
   },
+  {
+    name: 'wsl_apply_perf',
+    description:
+      'Write the configured WSL2 performance limits (memory / processors / swap / autoMemoryReclaim) into %USERPROFILE%\\.wslconfig, backing the old file up first. '
+      + 'These knobs apply to EVERY WSL distribution of this user and are only read when the WSL2 VM boots, so pass restart=true to shut the VM down and apply them now. '
+      + 'Nothing is deleted: the previous .wslconfig is kept next to it as .wslconfig.bak-<timestamp>.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        restart: { type: 'boolean', description: 'shut the WSL2 VM down afterwards so the new limits take effect (stops every distro until the next call)' },
+      },
+      additionalProperties: false,
+    },
+    handler: async (args) => {
+      refreshSettings();
+      const result = applyWslconfig(settings);
+      let restarted = null;
+      if (args.restart) {
+        const res = await shutdownWsl();
+        live.ready = false;
+        restarted = { ok: Boolean(res.ok), stderr: res.stderr || '' };
+      }
+      return {
+        ok: true,
+        path: result.path,
+        changed: result.changed,
+        backup: result.backup,
+        applied: wslconfigUpdates(settings),
+        wslconfig: result.after?.wsl2 || {},
+        restarted,
+        hint: restarted
+          ? 'VM shut down; the next mcp__wslcu__* call cold-starts it with the new limits.'
+          : 'Written but not applied yet: .wslconfig is read at VM boot, so call again with restart=true (or run wsl --shutdown yourself).',
+      };
+    },
+  },
+  {
+    name: 'wsl_release',
+    description:
+      'Release the managed WSL distribution right now: terminate it so the VM gives its memory back. Data is untouched and the next mcp__wslcu__* call cold-starts it again. '
+      + 'The same thing happens automatically after idleReleaseMin minutes without activity.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    handler: async () => {
+      refreshSettings();
+      const distro = settings.distro || '';
+      const result = await terminateDistro(distro);
+      live.ready = false;
+      const releasedAt = new Date().toISOString();
+      writeStatus({ releasedAt, lastActivityAt, distro });
+      return {
+        ok: Boolean(result.ok),
+        distro: distro || '(default)',
+        releasedAt,
+        stderr: result.stderr || '',
+        hint: 'The distro is stopped. The next tool call will cold-start it (a few seconds).',
+      };
+    },
+  },
+  {
+    name: 'wsl_move_distro',
+    description:
+      'Move the distribution\'s virtual disk to the Windows directory configured in distroDataDir (explicit confirm=true required). '
+      + 'Uses the official `wsl --manage <distro> --move`; it can take minutes and needs toolCallTimeoutMs raised well above the default. '
+      + 'On failure the original disk stays where it is.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        target: { type: 'string', description: 'Windows directory; defaults to the distroDataDir setting' },
+        confirm: { type: 'boolean', description: 'must be true: this is a long, disruptive operation' },
+      },
+      additionalProperties: false,
+    },
+    handler: async (args) => {
+      refreshSettings();
+      if (args.confirm !== true) {
+        throw new ControlError(
+          'CONFIRM_REQUIRED',
+          'wsl_move_distro needs confirm=true: it moves the whole distribution disk and can take minutes.',
+        );
+      }
+      const target = String(args.target || settings.distroDataDir || '').trim();
+      if (!target) {
+        throw new ControlError('TARGET_REQUIRED', 'Set distroDataDir in the plugin settings, or pass target explicitly.');
+      }
+      const result = await moveDistro(settings.distro, target);
+      writeStatus({ distroDataDir: target });
+      return {
+        ok: Boolean(result.ok),
+        distro: settings.distro || '(default)',
+        target,
+        stderr: result.stderr || '',
+        error: result.error || '',
+        hint: result.ok ? 'Disk moved. Run wsl_apply_perf with restart=true if WSL asks for a restart.' : 'Nothing moved: the original disk is still in place.',
+      };
+    },
+  },
 ];
 
 const toolMap = new Map(tools.map((tool) => [tool.name, tool]));
@@ -595,6 +804,8 @@ function replyError(id, code, message, data) {
 async function handleCall(name, args) {
   const tool = toolMap.get(name);
   if (!tool) throw new Error(`unknown tool: ${name}`);
+  refreshSettings();
+  markActivity();
   const value = await tool.handler(args || {});
   return {
     content: [{ type: 'text', text: JSON.stringify(value, null, 2) }],

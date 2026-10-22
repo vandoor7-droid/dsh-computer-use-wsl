@@ -181,6 +181,50 @@ L5 需要本机装有 DSH（找不到时自动 SKIP，不报错）。
 > → 部署 → 发布网页渠道）时，页面是 Angular 写的，Enter 与 `element.click()` 大面积失效，
 > 全程靠 `fill/click/setfile/mouse/key` 这几个 CDP 命令完成；截图与文本证据仍由插件链路产出。
 
+## 配置与状态（0.2.0）
+
+### 配置在插件页，不在设置页
+
+打开「插件 → WSL 虚拟桌面」，配置项直接排在该插件页里（`plugins.item` 槽位 +
+宿主的 `configForms` 服务），改完即生效：
+
+| 分组 | 字段 | 说明 |
+|---|---|---|
+| WSL 性能分配 | `wslMemoryGb` / `wslProcessors` / `wslSwapGb` / `autoMemoryReclaim` | 写 `%USERPROFILE%\.wslconfig` 的 `[wsl2]`；**对该用户所有 WSL 发行版生效**，重启 WSL 后生效 |
+| 系统位置 | `distroDataDir` / `windowsOutputDir` | 发行版磁盘目标目录（只记录，搬迁走 `wsl_move_distro`）/ Windows 侧产物目录 |
+| 资源释放 | `idleReleaseMin` | 默认 30 分钟；0 = 不释放 |
+
+字段类型与默认值在 `lib/index.js` 导出的 `Config`（schemastery，全 `.volatile()`），
+表单标签与提示在 `lib/client.js` 的 `FIELDS` 表。volatile 值以 live ref 到达，一律经
+`derefConfig()` 读取；宿主把编辑结果写进 `%LOCALAPPDATA%\wslcu\settings.json`，
+MCP 进程按 mtime 重读，因此改配置不需要重启后台。
+
+### 对话框里的状态徽标
+
+对话输入框附近有一枚 WSL 状态徽标，2 秒轮询宿主路由 `/wslcu/status`：
+
+| 徽标 | 含义 |
+|---|---|
+| 未启动 | 发行版没跑或桌面未就绪 |
+| 空闲 | 就绪且无人操作 |
+| DSH 操作中 | 有工具正在驱动桌面（附工具名与剩余持有时间） |
+| 已人工接管 | 人持有指针（附持有者机器名） |
+| 已释放 | 闲置回收已终止发行版，下次调用自动冷启动 |
+
+### 闲置释放
+
+超过 `idleReleaseMin` 分钟没有 `mcp__wslcu__*` 调用，就 `wsl --terminate <distro>`
+把内存还给系统（只停本插件管理的发行版，数据不动）。判定是纯函数
+`shouldRelease()`，30 秒检查一次；下一次工具调用自动冷启动，约数秒。
+
+### 相关工具
+
+- `wsl_apply_perf` — 把当前设置写进 `.wslconfig`（写前备份为 `.wslconfig.bak-<ts>`），
+  `restart=true` 时再 `wsl --shutdown` 让限制立即生效（会停掉所有发行版）
+- `wsl_release` — 立刻终止本发行版释放内存
+- `wsl_move_distro` — `wsl --manage <distro> --move`，需 `confirm=true`，慢操作
+- `health` — 现在也回报发行版状态、`.wslconfig` 现值、闲置倒计时与产物目录
+
 ## 许可
 
 MIT。第三方组件（x11vnc / noVNC / websockify / xdotool / ImageMagick / xclip）不随本包分发，见 [THIRD_PARTY.md](./THIRD_PARTY.md)。

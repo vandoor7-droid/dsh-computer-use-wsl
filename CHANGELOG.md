@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.2.0 — 2026-10-22
+
+首次把「配置面」放进插件自己身上，而不是全局设置页。
+
+- **插件页配置表单**（`plugins.item` 槽位 + 宿主 `configForms` 服务）：
+  WSL2 内存上限 / 逻辑核心 / swap / autoMemoryReclaim、发行版磁盘落盘目录、
+  产物落盘目录、闲置释放分钟数。保存走官方 `savePatch`（`remote.settings.mutate`
+  → `configForms.describe().acceptView`），失败回滚并显示原因。
+- **声明式设置 schema**：`lib/index.js` 导出 `Config`（schemastery，全字段
+  `.volatile()`）。volatile 值以 live ref 形式到达，统一经 `derefConfig()` 读取；
+  变更经 `loader/volatile-update` 热发布，不重载插件。
+- **配置热中继**：bridge 的 env 只在 spawn 时固定，因此宿主把编辑后的设置写进
+  `%LOCALAPPDATA%\wslcu\settings.json`，MCP 进程按 mtime 重读——改 `idleReleaseMin`
+  之类的开关不需要重启后台。
+- **闲置自动释放**：`idleReleaseMin`（默认 30，0=关）分钟没有 `mcp__wslcu__*` 调用
+  就 `wsl --terminate <distro>` 释放 vmmem；数据不动，下次调用自动冷启动。判定是
+  纯函数 `shouldRelease()`，周期 30s 检查，与 `dsh-browser-cdp` 的 idle reaper 同形。
+- **对话框状态徽标**（`conversation.input.dock`）：五态
+  未启动 / 空闲 / DSH 操作中 / 已人工接管 / 已释放，2s 轮询宿主路由
+  `/wslcu/status`。该路由服务端合并「查看器 /state + releasedAt 标记 + 发行版运行态」，
+  浏览器不必跨源访问 VNC 查看器。
+- **三个新工具**：`wsl_apply_perf`（写 .wslconfig，可选重启 VM；写前备份）、
+  `wsl_release`（立即释放）、`wsl_move_distro`（`wsl --manage --move`，需 confirm）。
+  `health` 增加 `wsl` 概览（发行版状态、.wslconfig 现值、闲置倒计时、产物目录）。
+- 测试：单测 22（新增 .wslconfig 合并/幂等、释放阈值、五态映射、status 合并、
+  字段 clamp），verify.sh 八层全绿。
+
+> 说明：没有加 `dsh-plugin.json`。查证后它的 `x-dsh-tui.SettingsSection` 只服务
+> TUI 宿主；Web GUI 的插件页表单走的是 `plugins.item` + `configForms`（官方
+> `dsh-computer-use-win` 同一做法），因此按 Web 契约实现。
+
 ## 0.1.10 — 2026-10-21
 
 - Documented three traps found by a full end-to-end run on a local form page
