@@ -90,3 +90,49 @@ test('contract: the chat-dock badge polls the /api route', () => {
   assert.ok(client.includes('conversation.input.dock'), 'the badge slot');
   assert.ok(client.includes('wsl-computer-status'), 'the badge id');
 });
+
+test('contract: the plugin manifest matches the package and the schema shape', () => {
+  const pkg = readJson('../package.json');
+  const manifest = readJson('../dsh-plugin.json');
+  assert.equal(manifest.manifestVersion, '0.15');
+  assert.equal(manifest.id, 'dsh-computer-use-wsl');
+  assert.equal(manifest.version, pkg.version, 'manifest version must track package.json');
+  assert.ok(fs.existsSync(new URL(`../${manifest.facets.host.entry}`, import.meta.url)), 'host entry is missing');
+  for (const key of ['$schema', 'manifestVersion', 'id', 'name', 'version', 'license', 'facets', 'requires', 'permissions', 'contributes', 'subscriptions']) {
+    assert.ok(key in manifest, `manifest is missing ${key}`);
+  }
+  assert.ok(Array.isArray(manifest.contributes['x-dsh-tui']), 'x-dsh-tui must be a list');
+});
+
+test('contract: the TUI settings section covers the settings we ship', () => {
+  const source = read('../lib/index.js');
+  const configKeys = new Set([...source.matchAll(/^ {2}(\w+): z\./gm)].map((m) => m[1]));
+  assert.ok(configKeys.size >= 20, `expected the full Config, got ${configKeys.size}`);
+
+  const manifest = readJson('../dsh-plugin.json');
+  const section = manifest.contributes['x-dsh-tui'].find((entry) => entry.kind === 'SettingsSection');
+  assert.ok(section, 'no SettingsSection contribution');
+  assert.equal(section.spec.namespace, 'dsh-computer-use-wsl');
+
+  const paths = section.spec.fields.map((field) => field.path.join('.'));
+  for (const field of section.spec.fields) {
+    assert.ok(configKeys.has(field.path[0]), `manifest field ${field.path[0]} is not a Config key`);
+    assert.ok(['number', 'select', 'boolean', 'text'].includes(field.kind), `bad kind for ${field.path[0]}`);
+    assert.ok(field.label, `${field.path[0]} has no label`);
+    if (field.kind === 'select') assert.ok(Array.isArray(field.options) && field.options.length > 0);
+  }
+  for (const required of ['wslMemoryGb', 'wslProcessors', 'wslSwapGb', 'autoMemoryReclaim', 'distro', 'distroDataDir', 'windowsOutputDir', 'idleReleaseMin']) {
+    assert.ok(paths.includes(required), `manifest is missing the ${required} field`);
+  }
+});
+
+test('contract: the badge aligns with the composer card', () => {
+  const client = read('../lib/client.js');
+  assert.ok(client.includes('--dsh-composer-side-clearance'), 'clearance token');
+  assert.ok(client.includes('--dsh-composer-card-max-width'), 'card width token');
+});
+
+test('contract: the badge honours reduced motion', () => {
+  const client = read('../lib/client.js');
+  assert.ok(client.includes('prefers-reduced-motion'), 'reduced-motion guard');
+});

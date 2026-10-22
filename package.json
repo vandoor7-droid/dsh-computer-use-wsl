@@ -1,13 +1,14 @@
 {
     "name":  "dsh-computer-use-wsl",
-    "version":  "0.3.1",
+    "version":  "0.3.2",
     "description":  "WSL / headless-Linux computer use for DeepSeek Harness: an MCP stdio bridge drives an Xvfb + x11vnc + noVNC desktop, exposing snapshot/click/type/key tools, plus a sidebar viewer shell that shows 「DSH 操作中」 and lets the human take over at any time.",
     "type":  "module",
     "main":  "./lib/index.js",
     "exports":  {
                     ".":  "./lib/index.js",
                     "./client":  "./lib/client.js",
-                    "./package.json":  "./package.json"
+                    "./package.json":  "./package.json",
+        "./dsh-plugin.json":  "./dsh-plugin.json"
                 },
     "files":  [
                   "lib/",
@@ -19,6 +20,7 @@
                   "README.en.md",
                   "CHANGELOG.md",
                   "THIRD_PARTY.md",
+        "dsh-plugin.json",
                   "LICENSE"
               ],
     "dsh":  {

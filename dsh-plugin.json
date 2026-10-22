@@ -1,0 +1,121 @@
+{
+  "$schema": "https://raw.githubusercontent.com/T-Auto/dsh-std/8a15541117cb3c13ddb8f2468308691b6051d162/packages/manifest/schema/dsh-plugin-0.15.schema.json",
+  "manifestVersion": "0.15",
+  "id": "dsh-computer-use-wsl",
+  "name": "dsh-computer-use-wsl",
+  "version": "0.3.2",
+  "license": "MIT",
+  "facets": {
+    "host": {
+      "entry": "lib/index.js",
+      "apiVersion": "v1alpha1"
+    }
+  },
+  "requires": {
+    "contracts": []
+  },
+  "permissions": [],
+  "contributes": {
+    "commands": [],
+    "x-dsh-tui": [
+      {
+        "apiVersion": "tui.dsh/v1alpha1",
+        "kind": "SettingsSection",
+        "id": "dsh-computer-use-wsl.settings",
+        "name": "dsh_computer_use_wsl_settings",
+        "spec": {
+          "namespace": "dsh-computer-use-wsl",
+          "title": "WSL 虚拟桌面",
+          "titles": {
+            "en": "WSL Virtual Desktop",
+            "zh": "WSL 虚拟桌面"
+          },
+          "fields": [
+            {
+              "path": [
+                "wslMemoryGb"
+              ],
+              "label": "WSL2 内存上限（GB）",
+              "kind": "number",
+              "hint": "写入 .wslconfig 的 [wsl2] memory，对该用户所有 WSL 发行版生效；需重启 WSL 后生效。"
+            },
+            {
+              "path": [
+                "wslProcessors"
+              ],
+              "label": "WSL2 逻辑核心数",
+              "kind": "number",
+              "hint": "写入 [wsl2] processors；不能超过本机物理/逻辑核心总数。"
+            },
+            {
+              "path": [
+                "wslSwapGb"
+              ],
+              "label": "Swap 大小（GB，0 = 不分配）",
+              "kind": "number",
+              "hint": "写入 [wsl2] swap。"
+            },
+            {
+              "path": [
+                "autoMemoryReclaim"
+              ],
+              "label": "空闲内存回收策略",
+              "kind": "select",
+              "options": [
+                {
+                  "value": "disabled",
+                  "label": "disabled（关闭）"
+                },
+                {
+                  "value": "gradual",
+                  "label": "gradual（渐进回收）"
+                },
+                {
+                  "value": "dropcache",
+                  "label": "dropcache（直接回收缓存）"
+                }
+              ],
+              "hint": "写入 [wsl2] autoMemoryReclaim。"
+            },
+            {
+              "path": [
+                "distro"
+              ],
+              "label": "发行版名称",
+              "kind": "text",
+              "hint": "本插件管理的 WSL 发行版（默认 UbuntuLab）；闲置释放只终止它。"
+            },
+            {
+              "path": [
+                "distroDataDir"
+              ],
+              "label": "发行版磁盘落盘目录",
+              "kind": "text",
+              "hint": "只记录目标位置。真正搬迁数据要显式调用 wsl_move_distro 工具（官方 wsl --manage --move）。"
+            },
+            {
+              "path": [
+                "windowsOutputDir"
+              ],
+              "label": "产物落盘目录（Windows）",
+              "kind": "text",
+              "hint": "截图 / 导出 / 体检备份等 Windows 侧产物写到这里。"
+            },
+            {
+              "path": [
+                "idleReleaseMin"
+              ],
+              "label": "闲置自动释放（分钟，0 = 不释放）",
+              "kind": "number",
+              "hint": "超过 N 分钟没有任何 mcp__wslcu__* 调用就终止本发行版释放内存；下次调用自动冷启动。"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "subscriptions": [],
+  "source": {
+    "repository": "https://github.com/vandoor7-droid/dsh-computer-use-wsl"
+  }
+}

@@ -66,6 +66,28 @@ for (const required of [
   }
 }
 
+// --- plugin manifest -------------------------------------------------------
+try {
+  const manifest = JSON.parse(await readFile(path.join(ROOT, 'dsh-plugin.json'), 'utf8'));
+  const pkg = JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8'));
+  if (manifest.version !== pkg.version) {
+    problems.push(`dsh-plugin.json version ${manifest.version} != package.json ${pkg.version}`);
+  }
+  if (!pkg.files.includes('dsh-plugin.json')) {
+    problems.push('dsh-plugin.json is not listed in package.json files[]');
+  }
+  if (manifest.facets?.host?.entry !== 'lib/index.js') {
+    problems.push('dsh-plugin.json host entry is not lib/index.js');
+  }
+  const section = (manifest.contributes?.['x-dsh-tui'] ?? []).find((entry) => entry.kind === 'SettingsSection');
+  if (!section) {
+    problems.push('dsh-plugin.json has no x-dsh-tui SettingsSection');
+  } else if (!Array.isArray(section.spec?.fields) || section.spec.fields.length < 8) {
+    problems.push('dsh-plugin.json SettingsSection has fewer than 8 fields');
+  }
+} catch (error) {
+  problems.push(`dsh-plugin.json: ${error.message}`);
+}
 if (problems.length) {
   console.error('pack-check failed:');
   for (const problem of problems) console.error(`  - ${problem}`);
@@ -89,6 +111,28 @@ for (const file of new Set(targets)) {
   }
 }
 
+// --- plugin manifest -------------------------------------------------------
+try {
+  const manifest = JSON.parse(await readFile(path.join(ROOT, 'dsh-plugin.json'), 'utf8'));
+  const pkg = JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8'));
+  if (manifest.version !== pkg.version) {
+    problems.push(`dsh-plugin.json version ${manifest.version} != package.json ${pkg.version}`);
+  }
+  if (!pkg.files.includes('dsh-plugin.json')) {
+    problems.push('dsh-plugin.json is not listed in package.json files[]');
+  }
+  if (manifest.facets?.host?.entry !== 'lib/index.js') {
+    problems.push('dsh-plugin.json host entry is not lib/index.js');
+  }
+  const section = (manifest.contributes?.['x-dsh-tui'] ?? []).find((entry) => entry.kind === 'SettingsSection');
+  if (!section) {
+    problems.push('dsh-plugin.json has no x-dsh-tui SettingsSection');
+  } else if (!Array.isArray(section.spec?.fields) || section.spec.fields.length < 8) {
+    problems.push('dsh-plugin.json SettingsSection has fewer than 8 fields');
+  }
+} catch (error) {
+  problems.push(`dsh-plugin.json: ${error.message}`);
+}
 if (problems.length) {
   console.error('pack-check failed:');
   for (const problem of problems) console.error(`  - ${problem}`);

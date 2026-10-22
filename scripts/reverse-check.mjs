@@ -109,6 +109,30 @@ const MUTATIONS = [
     layer: 'L1',
     expect: 'wsl_release',
   },
+  {
+    id: 'manifest-version-drift',
+    file: 'dsh-plugin.json',
+    find: '"version": "0.3.2",',
+    replace: '"version": "0.0.0",',
+    layer: 'L3',
+    expect: 'the plugin manifest matches',
+  },
+  {
+    id: 'badge-alignment-dropped',
+    file: 'lib/client.js',
+    find: 'calc(max(0px, (100% - var(--dsh-composer-card-max-width, 712px)) / 2) + var(--dsh-composer-side-clearance, 16px))',
+    replace: '0px',
+    layer: 'L3',
+    expect: 'aligns with the composer',
+  },
+  {
+    id: 'reduced-motion-dropped',
+    file: 'lib/client.js',
+    find: "window.matchMedia('(prefers-reduced-motion: reduce)')",
+    replace: "window.matchMedia('(prefers-anything: reduce)')",
+    layer: 'L3',
+    expect: 'honours reduced motion',
+  },
 ];
 
 function sh(args, timeout = 240000) {
