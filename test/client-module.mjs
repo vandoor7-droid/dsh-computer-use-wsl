@@ -76,6 +76,10 @@ check('apply registers the chat-dock status badge', () => {
   };
   mod.apply(ctx);
 
+  assert.ok(
+    calls.some((call) => call[0] === 'inject' && call[1] === 'conversation.input.dock'),
+    'the badge slot was never injected',
+  );
   const badge = calls.find((call) => call[0] === 'register' && call[1] === 'conversation.input.dock');
   assert.ok(badge, 'the chat-dock badge was never registered');
   assert.equal(badge[2], 'wsl-computer-status');

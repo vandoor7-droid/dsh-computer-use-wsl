@@ -1,5 +1,5 @@
 /**
- * L1 — MCP protocol conformance.
+ * L1 鈥?MCP protocol conformance.
  *
  * Verifies the exact handshake dsh-mcp-client performs: initialize,
  * notifications/initialized, tools/list, and one tools/call per read-only tool.
@@ -21,6 +21,7 @@ const EXPECTED = [
   'health', 'control_state', 'desktop_up', 'desktop_down', 'bootstrap', 'launch',
   'snapshot', 'windows', 'wait_window', 'click', 'move', 'drag', 'scroll',
   'type_text', 'key', 'read_all_text', 'wait_text', 'takeover', 'exec',
+    'wsl_apply_perf', 'wsl_release', 'wsl_move_distro',
 ];
 
 const results = [];
